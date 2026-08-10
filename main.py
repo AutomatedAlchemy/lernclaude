@@ -702,7 +702,16 @@ def main() -> int:
     if args.add:
         return do_add()
 
-    if args.menu or not args.workspace:
+    if args.init:
+        if not args.workspace:
+            print("Error: --init needs a workspace folder, e.g. `lernen --init ~/Study/Datenanalyse`")
+            return 1
+        return do_init(args.workspace)
+
+    # The menu is the interactive route only. The inspection flags stay
+    # non-interactive and fall back to the registry default, so they remain
+    # usable from scripts and from a pipe.
+    if (args.menu or not args.workspace) and not (args.print_prompt or args.dry_run):
         return run_menu()
 
     ws = _resolve_workspace(args.workspace)
@@ -711,11 +720,6 @@ def main() -> int:
               "or `lernen --init <folder>` to set one up.")
         return 1
 
-    if args.init:
-        if not args.workspace:
-            print("Error: --init needs a workspace folder, e.g. `lernen --init ~/Study/Datenanalyse`")
-            return 1
-        return do_init(args.workspace)
     if args.print_prompt:
         print(_assemble_prompt(ws))
         return 0

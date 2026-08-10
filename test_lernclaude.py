@@ -220,3 +220,17 @@ def test_build_argv_uses_tier_model_on_pro(monkeypatch):
     argv = m._build_argv("/tmp/Study/Datenanalyse")
     assert argv[argv.index("--model") + 1] == "sonnet"
     assert argv[argv.index("--effort") + 1] == "medium"
+
+
+def test_inspection_flags_do_not_open_the_menu(tmp_path, monkeypatch):
+    """--dry-run / --print-prompt must stay non-interactive and fall back to the
+    registry default. They used to fall through to the curses menu and hang."""
+    monkeypatch.setenv("LERNCLAUDE_REGISTRY", str(tmp_path / "r.json"))
+    ws = tmp_path / "Kurs"; ws.mkdir()
+    m._register_workspace(str(ws))
+    for flag in ("--dry-run", "--print-prompt"):
+        called = {}
+        monkeypatch.setattr(m, "run_menu", lambda: called.setdefault("menu", True) or 0)
+        monkeypatch.setattr(sys, "argv", ["lernen", flag])
+        assert m.main() == 0
+        assert not called.get("menu"), f"{flag} opened the menu"
