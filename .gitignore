@@ -1,0 +1,9 @@
+# Your course list — tool-local mutable state, never committed.
+data/registry.json
+data/*.sync-conflict-*
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
