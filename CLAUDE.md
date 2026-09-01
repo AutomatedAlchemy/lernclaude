@@ -198,6 +198,31 @@ ceiling, not an oversight: this is interactive tutoring, where latency is felt m
 than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
 `CLAUDE_TIER_OVERRIDE` forces a tier for tests.
 
+## Commits: make them yourself, leave the push
+
+Commit here without asking. The umbrella rule in [`../REPOS.md`](../REPOS.md)
+§ Autonomous commits gates non-Gitea repos by default; this section is this
+repo's own convention, the way `ssl/mujoco/` has one. The GitHub remote gates
+the push, not the commit.
+
+- **Check `git status` before your first edit.** A dirty tree is someone else's
+  unfinished work. Commit it as its own commit first, then start yours. Once your
+  edits are mixed into those files the two can no longer be separated by pathspec,
+  and one of them ends up in a commit that does not describe it (it happened,
+  2026-09-01: the medium switch and the Quickie shipped inside the Vorbereitung
+  commit).
+- **One purpose per commit**, and commit by pathspec — `git commit -m "…" -- a b`,
+  never `git add` + a bare `git commit`. New files are the one exception: `git add`
+  exactly those paths, then commit by pathspec as usual.
+- **Commit when the tree works**, not when the feature is finished. Green
+  `python3 -m pytest -q`, docs in the same commit as the code they describe
+  (README + this file + the mode tables), no `data/registry.json` (gitignored,
+  and it is mutable per-host state).
+- **Never push, never open a PR.** `origin` is GitHub
+  (`Probst1nator/lernclaude`), and publishing is the user's call. Say the work is
+  committed, name the SHA, and stop there. The push is the only step that waits
+  for a person.
+
 ## Layout
 
 | File | Role |
