@@ -218,6 +218,21 @@ the push, not the commit.
   `python3 -m pytest -q`, docs in the same commit as the code they describe
   (README + this file + the mode tables), no `data/registry.json` (gitignored,
   and it is mutable per-host state).
+- **Mark a repair when you make it**, so nobody reconstructs later which commit
+  fixed which: `git commit --fixup=<sha> -- <paths>`.
+- **Fold the fixups in one pass right before the push**, on one host:
+  `git rebase --autosquash origin/main`. Only fixups — collapsing the whole
+  unpushed window into one commit would undo the one-purpose rule above.
+- **Never rewrite at or below `origin/main`.** Pushed is permanent. Fix forward
+  with a normal commit.
+- **That narrow window is not fussiness: `.git` is Syncthing-replicated here.**
+  `~/Synced/.stignore` excludes only the volatile per-host files (`index`,
+  `FETCH_HEAD`, `ORIG_HEAD`, `logs`, …), so `refs/heads/main` and `objects/`
+  travel between machines and the reflog does not. Rewrite while another host
+  holds the old ref and you get a `.sync-conflict` copy of a ref or a silent
+  overwrite — git never sees either — with the only recovery net sitting on the
+  host that did the rewrite. Compare `probable-infrastructure/.git`, corrupted
+  on the Ideapad 2026-07-28.
 - **Never push, never open a PR.** `origin` is GitHub
   (`Probst1nator/lernclaude`), and publishing is the user's call. Say the work is
   committed, name the SHA, and stop there. The push is the only step that waits
