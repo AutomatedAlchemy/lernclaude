@@ -1,11 +1,11 @@
 # CLAUDE.md — Lern-Loop-Workspace: «FACH»
 
 > Generalisiertes Lern-Loop-Muster (Prototyp: Math DS 2). Diese Datei wurde von
-> `lernen --init` in den Materialordner gestempelt. Beim Bootstrap füllt eine
-> Claude-Instanz die «Platzhalter» aus dem vorhandenen Material aus.
+> der Kurs-Anlage in den Materialordner gestempelt. Die anlegende Claude-Instanz
+> füllt die «Platzhalter» aus dem vorhandenen Material aus.
 > Gestartet wird der Loop über `lernen «dieser Ordner»` (eigenes Desktop-Icon möglich).
 
-## Eckdaten (beim Init ausfüllen)
+## Eckdaten (beim Anlegen ausfüllen)
 
 | | |
 |---|---|
@@ -15,7 +15,7 @@
 | **Bestehen ab** | «z.B. 50 %» |
 | **Hilfsmittel** | «z.B. 5 handschriftliche A4-Seiten \| keine \| Formelsammlung» |
 
-## Themenkarte (beim Init aus dem Material füllen)
+## Themenkarte (beim Anlegen aus dem Material füllen)
 
 Der Klausur-Bauplan: die Themen + je Thema die typische Falle. Bewusst ein
 Abschnitt in dieser Datei und keine eigene Datei — so lädt Claude ihn
@@ -30,14 +30,19 @@ automatisch mit. Die Häppchen rotieren durch diese Themen.
 
 - **`CLAUDE.md`** (diese Datei) = *wie* + Eckdaten + Themenkarte. Zuerst lesen.
 - **`todo.md`** = *wo stehen wir* — Re-Entry-Punkt: Klausurdatum, Stand, aktive Dateien.
+  Enthält immer genau eine Zeile `Fortschritt: x/y Häppchen` — x = reviewte Häppchen,
+  y = aktuelle Schätzung, wie viele Häppchen es insgesamt bis zur Klausurbereitschaft
+  braucht. y ist eine lebende Schätzung (nach jedem Review neu bewerten, gern anhand
+  der Themenkarte). Das `lernen`-Startmenü liest genau diese Zeile als Kurs-Fortschritt.
 - **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Nach JEDEM
   Review mitziehen: User-Zitat → warum falsch → was stattdessen. Dominante Muster oben halten.
 - **`Personalisierte_Übungen/`** — die Häppchen (`haeppchen_NN.tex` → `.pdf`),
-  `.xopp`-Handschrift-Annotationen, `haeppchen_NN_reviewt.png` (annotierte Reviews).
+  eigenständige `.xopp`-Rechenblätter (nicht auf dem PDF!), `haeppchen_NN_reviewt.png`
+  (annotierte Reviews).
 
 ## Situative Dateien — nur anlegen, wenn gebraucht
 
-- **`notebooklm_lernpausen.md`** (nur wenn du Lernpausen-Videos/Quiz willst) — EIN
+- **`notebooklm_lernpausen.md`** (nur wenn du Lernpausen-Videos willst) — EIN
   kompaktes NotebookLM-Doc: (A) Fehlermuster, (B) Themen im Schnelldurchlauf. Kein
   LaTeX, Unicode. Dynamisch, nicht kumulativ.
 - **`Klausur_mitnehmen/`** (nur falls Hilfsmittel erlaubt) — Mitnehm-Blätter;
@@ -45,8 +50,16 @@ automatisch mit. Die Häppchen rotieren durch diese Themen.
 
 ## Lern-Loop (der Kern)
 
-**1. Lern-Set öffnen** — auf „lass uns lernen": die Referenz-/Mitnehm-Blätter + die
-zuletzt geänderte Übung (Firefox) + die neueste `.xopp` (Xournal++, `xournalpp <datei> &`).
+**0. Arbeitsmedium** — kommt vom Launcher, nicht aus dieser Datei: der Umschalter
+im `lernen`-Startmenü (`m`) bestimmt Xournal++ oder Tutor Board, und die Mechanik
+des aktiven Mediums steht im Systemprompt der Session. **Nicht erfragen.** Der
+User darf **mitten im Lernen wechseln** („lass uns aufs Board", „zurück zu
+Xournal") — dann ab dem nächsten Häppchen im neuen Medium weiterarbeiten und ihn
+erinnern, fürs nächste Mal den Schalter im Menü umzulegen.
+
+**1. Lern-Set öffnen** — auf „lass uns lernen" das Arbeitsfenster des aktiven
+Mediums öffnen (wie im Systemprompt beschrieben, ohne nachzufragen) plus
+Referenz-/Mitnehm-Blätter und die zuletzt geänderte Übung.
 
 **2. Häppchen-Prinzip** — personalisierte Übungen als **kleine 5–10-min-Einzelaufgaben**,
 die durch die `themenkarte.md`-Themen **rotieren** — NICHT große Multi-Aufgaben-Blätter
@@ -60,14 +73,32 @@ die durch die `themenkarte.md`-Themen **rotieren** — NICHT große Multi-Aufgab
   Satz-Konzeptintro, Notation ausschreiben (z.B. ⟨a,b⟩ = a₁b₁+a₂b₂).
 - **Ablauf:** eine Mini-Aufgabe → User löst digital mit Zwischenschritten → schickt Foto/
   Scan → gezieltes Review → nächstes Häppchen (nächster Typ).
-- **Neue Häppchen-PDF sofort selbst in Firefox öffnen**, nicht nachfragen.
+- **Neues Häppchen sofort selbst öffnen**, nicht nachfragen — im aktiven Medium,
+  wie im Systemprompt beschrieben.
+
+**2b. Quiz-Häppchen — Wissensabfragen laufen IM Loop, nie extern.** Externe
+Quiz-Generatoren (NotebookLM & Co.) sieht der Tutor nie: Antworten und bewiesenes
+Wissen gehen für Fehlermuster + Fortschritt verloren. Wissensabfragen daher als
+eigenes Häppchen hier im Loop:
+- **Format zuerst prüfen — Choice-Framing ist nicht automatisch richtig.** Gut für
+  Single/Multiple Choice: Erkennen und Unterscheiden (Definitionen, Notation, „welche
+  Aussage gilt"), schnelle Konzept-Checks vor einem neuen Thema, Faktenwissen im
+  mündlich-Modus. Falsch für alles mit Rechenweg/Herleitung — dort misst MC nur
+  Ausschlussdenken; das bleibt ein Rechen-Häppchen. Im Zweifel offene Frage statt
+  Optionen.
+- **Umsetzung im aktiven Medium** (s. Systemprompt): AskUserQuestion-Runden im Chat
+  bzw. ein eigener Quiz-Tab auf dem Board. Distraktoren gezielt aus `fehlermuster.md`
+  bauen: der falsche Weg, den der User wirklich geht, ist die beste Falle.
+- **Nachbereitung wie jedes Review:** falsche Antworten → `fehlermuster.md` (Zitat →
+  warum falsch → was stattdessen); ein Quiz zählt als Häppchen in der
+  `Fortschritt:`-Zeile.
 
 **3. Review-Regel (verbindlich): Fehler SICHTBAR am Blatt des Users zeigen**, nicht nur
-loggen. Neueste `.xopp` zu PNG exportieren, Fehlerstellen rot einkreisen/nummerieren,
-Legende (rot = Fehler mit Korrektur, grün = neu Gemeistertes) in den Freiraum darunter,
-als `haeppchen_NN_reviewt.png` speichern und **sofort in Firefox öffnen**. Zusätzlich im
-Chat explizit durchgehen (Zitat → warum falsch → was stattdessen). Erst danach das nächste
-Häppchen. Jedes Review auch in `fehlermuster.md` (+ ggf. situative Docs, falls angelegt).
+loggen — wie, steht in der Medium-Mechanik im Systemprompt (annotiertes PNG bzw.
+Korrektur am Board-Tab). Zusätzlich im Chat explizit durchgehen (Zitat → warum falsch →
+was stattdessen). Erst danach das nächste Häppchen. Jedes Review auch in
+`fehlermuster.md` (+ ggf. situative Docs, falls angelegt), und die Zeile
+`Fortschritt: x/y Häppchen` in `todo.md` mitziehen (x hochzählen, y neu schätzen).
 
 **Modus-Split:**
 - **schriftlich** → der Häppchen-Rechen-Loop wie oben.

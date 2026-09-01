@@ -34,6 +34,134 @@ fragments and fails if any reappear. That test earned its keep during extraction
 it caught the onboarding prompt still naming the author's study folders after the
 constants had been cleaned up.
 
+## The exam banner reads a file it does not own
+
+The menu header (`upcoming_exams` → `_exam_banner_lines`) parses a *foreign*
+markdown file — for the author, a life-admin SSoT that gets edited by hand for
+its own reasons. Two consequences the code must keep honouring:
+
+- **Never write to it, never require a shape.** The parser skips any table that
+  lacks a date *and* a label header, so an unrelated table in the same file (a
+  Notenübersicht, say) is silently ignored rather than mis-read.
+- **Fail into silence, not into an error.** Missing path, unreadable file,
+  garbage dates — every path returns `[]` and the menu just has no banner. This
+  is a launcher; it must not refuse to open a course because a notes file moved.
+
+The path itself is configuration (`LERNCLAUDE_EXAMS`, or `exams_file` in the
+registry), never a constant — `test_no_workspace_is_hardcoded_anywhere` greps
+`main.py` for personal path fragments and this feature is exactly the kind that
+would tempt one back in.
+
+Rows the user has already dealt with are filtered by `_DONE_MARKERS` (`~~`,
+`abgelegt`, `bestanden`, `Rücktritt`, …) rather than by a status column, because
+the source table records outcomes inline in the date cell.
+
+## Course progress: parse, never judge
+
+The menu's `· x/y Häppchen` per course comes from one line the *workspace
+session* maintains in that course's `todo.md` (`Fortschritt: 7/24 Häppchen`).
+The split honours the SSoT boundary: how many Häppchen remain until
+"klausurbereit" is a tutoring judgment, so the workspace owns the number and
+re-estimates `y` after every review; the launcher (`course_progress`) only
+parses and displays it. Same failure contract as the exam banner: missing file,
+missing line, the scaffolded `0/?` placeholder — all return `None` and the row
+just has no suffix. The convention is taught in three places that must stay in
+sync: the template (todo.md bullet + review step), the scaffolded `todo.md`
+skeleton, and `opening_message` (so pre-existing workspaces adopt it without
+manual edits).
+
+## Tutors Choice
+
+The menu's top row (only shown with ≥2 courses) and `--tutor` route to
+`_launch_tutor_choice`: ONE interactive session, launched exactly like a course
+launch (tier model, same `_exec_or_konsole`), whose opening message
+(`opening_message_tutor`) carries a compact per-course dossier plus
+`upcoming_exams()`. The dossier is everything *mechanically* extractable from
+the files every course is guaranteed to have: the Fortschritt line and file
+mtimes, the Themenkarte row count (CLAUDE.md), created/reviewed Häppchen
+counted from the exercise folder, the first fehlermuster.md entry (dominant by
+convention), and the newest dated todo.md line (dotted dates need a 4-digit
+year — "27.07.10" is an old exam's filename). Deliberately NO file excerpts:
+the session has tools and is told to read the candidates' todo.md itself
+(inline excerpts were only ever needed by the removed tool-less `claude -p`
+pass, and had ballooned the opening to ~15k chars; facts keep it ~4k). Each
+extractor fails into silence — a missing piece drops its line. The session
+states its pick in one sentence, then reads the
+chosen course's CLAUDE.md and runs its Lern-Loop itself — the chooser IS the
+Häppchen author (an earlier design ran a `claude -p` pre-pass and launched a
+second session; the split was deliberately removed). Because no single workspace
+is chosen at launch time, the session starts at `_tutor_workdir` (the courses'
+common root, `$HOME` fallback) and the chosen workspace's CLAUDE.md is read, not
+auto-loaded — `_assemble_tutor_prompt` says so. The priority judgment stays with
+the model, not a launcher-side heuristic (SSoT boundary).
+
+The registry `default` may hold the `__TUTOR__` sentinel: `d` on the row or
+`--set-default tutor` writes it, and the menu autostart then routes to the tutor
+pick. Registration never claims the default any more — an unset default resolves
+in `_ensure_default` to Tutors Choice with ≥2 courses, the sole course with one.
+`_default_workspace()` (scripts, `--dry-run`/`--print-prompt`) never returns the
+sentinel; it falls back to the first course. The row renders in always-bold
+magenta (`C["tutor"]`), distinct from the muted add-row magenta.
+
+## Quickie: the habit entry, not a second loop
+
+The menu's top row (`_QUICKIE_SENTINEL`, shown with ≥1 course) and `--quickie`
+route to `_launch_quickie`: the same one-session mechanics as Tutors Choice
+(tier model, `_exec_or_konsole`, dossiers when there are several courses, the
+course's own CLAUDE.md read for the mechanics), but the brief
+(`opening_message_quickie`) is scaled down to ONE five-minute Häppchen and
+tuned for a quick win and a one-line „Noch eins?“. It carries
+`upcoming_exams()` like the tutor does (shared `_exam_prompt_lines`) — with
+several courses the deadlines steer the pick, with one they steer the topic. The point is the habit —
+lowering the threshold to start and making a second round the easy next step —
+so the brief forbids preamble, long analysis and closing lectures. It still
+respects the SSoT boundary: no file lists, the course CLAUDE.md owns the
+mechanics; the Quickie only says "scale it to one Häppchen". With one course
+the session starts inside it (CLAUDE.md auto-loads); with several it starts at
+the common root like the tutor.
+
+The streak (`registry["quickies"]`: `last`, `streak`, `total`) is launcher
+state, written by `_record_quickie` at launch time — a launch counts, whether
+or not a Häppchen got finished; judging that would put a tutoring decision in
+the launcher. `_quickie_stats` reports the streak only while it is alive (last
+Quickie today or yesterday), and both are pure functions of a `today` string so
+the tests never depend on the clock. The row suffix (`_quickie_suffix`) and the
+opening's counter line are the only consumers. The sentinel is a valid
+`default` (`d`, `--set-default quickie`) and, like the tutor sentinel, never
+leaks out of `_default_workspace` — `_SENTINELS` is the single list to check.
+
+## Vorbereitung: the mode's shape here, its content everywhere else
+
+`--vorbereitung` / the menu row (`_VORBEREITUNG_SENTINEL`, shown with ≥1 course)
+route to `_launch_vorbereitung`: one session in ONE course, launched exactly like
+a course launch. It never picks a course — `_vorbereitung_target` returns the one
+a bare launch would open (registered default, else the first), and the menu row
+names it in its label; `lernen <ws> --vorbereitung` prepares any other. The
+sentinel is a valid `default` like the other two and is listed in `_SENTINELS`.
+
+The launcher owns only the **shape**: overview first, wait for the user to say it
+is read, then the course's normal Häppchen loop over exactly those topics.
+*Which* topics is a tutoring judgment and comes from the Themenkarte in the
+course CLAUDE.md; *how* the overview is presented is medium mechanics and lives
+in `templates/medium_*.md` (board: a read-only tab `V01 …` with one
+„Gelesen"-Button, explicitly not Tab 0; xournalpp: a solution-free reading PDF).
+Neither may migrate into `_assemble_vorbereitung_prompt` — that is the same
+boundary `test_prompts_orient_without_reencoding_the_procedure` guards.
+
+## The medium switch: choice in the launcher, mechanics in launcher templates
+
+The working medium (Xournal++ vs Tutor Board) is deliberately NOT part of the
+SSoT in the course docs — it is cross-course infrastructure. Two launcher-owned
+pieces: the *choice* (registry key `medium`, menu key `m`, `--set-medium`,
+`LERNCLAUDE_MEDIUM` override, default `xournalpp`) and the *mechanics*
+(`templates/medium_<name>.md`, appended to the system prompt by
+`_assemble_prompt` — only the active medium's file, fail-into-silence when
+missing). Course CLAUDE.mds and the workspace template carry no medium
+machinery; they point at "Systemprompt" (`test_template_defers_the_medium_to_
+the_launcher` pins this). Escape hatches the prompt grants: mid-session verbal
+switching (next Häppchen in the new medium), and a course CLAUDE.md may pin a
+fixed medium, which then wins — the board-native language courses rely on that.
+
 ## Tool-local state
 
 The registry lives at `data/registry.json`, anchored to `SCRIPT_DIR` — **not**
@@ -77,7 +205,8 @@ than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
 | `main.py` | launcher, menu, registry, install/remove |
 | `tier.py` | vendored subscription-tier → model/effort mapping |
 | `templates/LERNLOOP_TEMPLATE.md` | the Lern-Loop procedure stamped into new workspaces |
-| `test_lernclaude.py` | 20 offline tests — no network, no launch |
+| `templates/medium_*.md` | per-medium mechanics, appended to the system prompt |
+| `test_lernclaude.py` | 13 offline tests — behaviour only, no network, no launch |
 | `requirements.txt` | empty by design; stdlib only |
 
 ## Gotchas
@@ -100,7 +229,7 @@ than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
 ## Tests
 
 ```bash
-python3 -m pytest -q     # 20 tests, offline
+python3 -m pytest -q     # 13 tests, offline
 python3 tier.py          # doctests + report this host's detected tier
 ```
 
