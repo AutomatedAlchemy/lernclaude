@@ -92,7 +92,7 @@ lernen --remove [ws]         # remove that icon + alias
 
 A bare `lernen` opens a small curses picker of your registered courses.
 `↑`/`↓` move · `Enter` starts · `m` switches the medium · `d` sets the default ·
-`a` adds a course · `x` removes one · `q` quits. Left untouched for ten seconds
+`x` removes a course · `q` quits. Left untouched for ten seconds
 it autostarts your default; any keypress cancels the countdown.
 
 A fresh clone has nothing registered, so the menu shows only "add a course" —

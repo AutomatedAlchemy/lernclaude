@@ -1195,7 +1195,7 @@ def _menu_loop(stdscr, data: dict):
             _safe_addstr(stdscr, top + i, 0, line, attr)
         foot = top + len(rows) + 1
         _safe_addstr(stdscr, foot, 0,
-                     "↑/↓ bewegen · Enter starten · m = Medium · d = Standard · a = hinzufügen · x = löschen · q = beenden",
+                     "↑/↓ bewegen · Enter starten · m = Medium · d = Standard · x = löschen · q = beenden",
                      C["foot"])
         if autostart and not interacted:
             _safe_addstr(stdscr, foot + 1, 0,
@@ -1222,8 +1222,6 @@ def _menu_loop(stdscr, data: dict):
             idx = (idx + 1) % len(rows)
         elif ch == ord("q"):
             return ("quit", None)
-        elif ch == ord("a"):
-            return ("add", None)
         elif ch == ord("m"):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
