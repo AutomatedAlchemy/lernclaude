@@ -193,11 +193,12 @@ def _prompt_common() -> str:
         "Medium weiterarbeiten und ihn erinnern, fürs nächste Mal den Schalter "
         "im Menü umzulegen. Schreibt die Kurs-CLAUDE.md ausdrücklich ein festes "
         "Medium vor, gilt die Kurs-Datei.\n\n"
-        "WICHTIG — Terminal-Ausgabe: Erklär mir OHNE LaTeX. Kein $...$, kein "
-        "\\frac, keine LaTeX-Makros — das rendert im Terminal nicht und ist schwer "
-        "zu entziffern. Schreib stattdessen in normaler/Unicode-Notation "
-        "(z.B. √, x², ∫, ≤, λ, x_1, Brüche als (a+b)/c). LaTeX gehört nur in die "
-        ".tex-Dateien der Häppchen, nicht in deine Chat-Erklärungen.\n\n"
+        "Deine Erklärungen im Terminal-Chat ohne LaTeX: kein $...$, kein \\frac, "
+        "keine LaTeX-Makros — das Terminal rendert sie nicht. Schreib dort in "
+        "normaler/Unicode-Notation (z.B. √, x², ∫, ≤, λ, x_1, Brüche als "
+        "(a+b)/c). Das gilt nur für den Chat: in den .tex-Dateien der Häppchen "
+        "und überall, wo das Arbeitsmedium LaTeX rendert (Tutor Board), "
+        "schreibst du LaTeX wie in der Medium-Mechanik unten beschrieben.\n\n"
         f"---\n# Heute: {today}\n"
     )
     mechanics = _medium_prompt(medium)
