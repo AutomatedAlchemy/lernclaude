@@ -64,9 +64,10 @@ Kurs-CLAUDE.md und der Fortschrittsspiegel in einem. Reihenfolge der Blöcke:
    `update_block` nachgezogen.
 3. **Themen erklärt** — je Thema Idee, Prüfungsanforderung, Notation, Falle,
    Material. Formeln in `markdown`-Blöcke.
-4. **Materialien** — PDFs, Folien, Altklausuren mit `upload_asset` (bzw.
-   `request_upload`) ans Board hängen und hier verlinken, so kann der Lerner sie
-   vom Board aus öffnen; was sich nicht hochladen lässt, wird beschrieben.
+4. **Materialien** — jede Datei mit Pfad und einem Halbsatz beschrieben. Das
+   Board nimmt keine PDFs an (`request_upload` nur Bilder und Video); Fotos
+   dürfen als `image`-Block rein, einzelne PDF-Seiten nur situativ im Häppchen,
+   das sie braucht (als PNG gerendert), nie ganze Skripte.
 5. **Vereinbarung** — drin / nicht drin / offene Fragen. Darunter genau EIN
    `submit`-Knopf („Gelesen & einverstanden"); sonst **keine Eingabefelder** im Tab.
 
