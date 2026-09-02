@@ -88,7 +88,12 @@ a markdown file. The split follows the Fortschritt pattern:
 - **Presence** is the launcher's: `course_overview` parses one line the session
   writes to `todo.md` after the user confirmed (`Übersicht: bestätigt
   YYYY-MM-DD`), same fail-into-silence contract as `course_progress`; the
-  scaffolded `Übersicht: fehlt` placeholder deliberately does not match.
+  scaffolded `Übersicht: fehlt` placeholder deliberately does not match. The
+  in-between line `Übersicht: gebaut …, Bestätigung ausstehend` (written when
+  the overview was built outside a tutoring session) is recognised by
+  `course_overview_built`: still unconfirmed, but the row says
+  `· Übersicht unbestätigt` and the brief tells the session to ask for the
+  confirmation instead of building again.
   Consumers: `_overview_suffix` (menu row `· ohne Übersicht`, `--list`), the
   tutor dossier line, and `_overview_brief` — appended to `opening_message`
   only while the line is missing, always to `opening_message_tutor` (the

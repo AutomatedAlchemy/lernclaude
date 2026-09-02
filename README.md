@@ -224,8 +224,9 @@ can open it from there), not in a file: the learner only ever sees the medium.
 The launcher owns none of the content. It reads one bookkeeping line the
 session writes to the course's `todo.md` once you have confirmed
 (`Übersicht: bestätigt 2026-09-02`), shows `· ohne Übersicht` on the menu row
-until then, and tells a normal launch or Tutors Choice to build the overview
-first. Courses created before this existed pick it up the same way on their
+until then (`· Übersicht unbestätigt` once the line says it is built and only
+the confirmation is missing), and tells a normal launch or Tutors Choice to
+build the overview first, or to ask for the confirmation if it is already built. Courses created before this existed pick it up the same way on their
 next launch; the session copies the `Kursübersicht` section from the template
 into the course `CLAUDE.md` if it is missing. The Quickie never builds one.
 Changing the Themenkarte means the overview is redone and confirmed again.

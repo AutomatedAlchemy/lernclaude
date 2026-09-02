@@ -270,6 +270,10 @@ def test_course_overview_parses_never_judges(tmp_path):
     assert m.course_overview(a) is None                       # the scaffolded placeholder
     assert m._overview_suffix(a) == "   · ohne Übersicht"
     assert "Übersicht: fehlt" in m._course_dossier(a)
+    todo.write_text("Übersicht: gebaut 2026-01-04, Bestätigung ausstehend (Board x, Tab 0)\n", encoding="utf-8")
+    assert m.course_overview(a) is None and m.course_overview_built(a)   # built ≠ confirmed
+    assert m._overview_suffix(a) == "   · Übersicht unbestätigt"
+    assert "Kursübersicht" in m.opening_message(a)              # still nudged: confirm, not build
     todo.write_text("**Uebersicht: bestätigt 2026-01-05**\n", encoding="utf-8")
     assert m.course_overview(a) == "2026-01-05"
     assert m._overview_suffix(a) == ""

@@ -271,7 +271,9 @@ def _overview_brief() -> str:
         "Medium aussieht, steht in der Medium-Mechanik. Geh sie mit mir durch, "
         "warte auf meine Bestätigung, trag dann „Übersicht: bestätigt "
         "YYYY-MM-DD“ (heutiges Datum) in todo.md ein — und erst dann das erste "
-        "Häppchen."
+        "Häppchen. Steht in todo.md schon „Übersicht: gebaut …, Bestätigung "
+        "ausstehend“, bau sie NICHT neu: zeig mir den Übersichts-Tab, beantworte "
+        "meine Fragen dazu, warte auf die Bestätigung und buche sie dann."
     )
 
 
@@ -707,6 +709,10 @@ def _progress_suffix(workspace: str) -> str:
 # "Übersicht: bestätigt 2026-09-02". Same contract as the Fortschritt line —
 # parse, never judge; the scaffolded "Übersicht: fehlt" placeholder does not match.
 _OVERVIEW_RE = re.compile(r"(?:ü|ue)bersicht:\s*bestätigt\s*(\d{4}-\d{2}-\d{2})", re.IGNORECASE)
+# The in-between state: built in the medium, the user has not confirmed yet
+# ("Übersicht: gebaut 2026-09-02, Bestätigung ausstehend"). Still unconfirmed,
+# but the session must ask for the confirmation instead of building again.
+_OVERVIEW_BUILT_RE = re.compile(r"(?:ü|ue)bersicht:\s*gebaut", re.IGNORECASE)
 
 
 def course_overview(workspace: str) -> "str | None":
@@ -719,9 +725,20 @@ def course_overview(workspace: str) -> "str | None":
     return match.group(1) if match else None
 
 
+def course_overview_built(workspace: str) -> bool:
+    """True while todo.md says the overview is built but not yet confirmed."""
+    try:
+        text = (Path(workspace) / "todo.md").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return bool(_OVERVIEW_BUILT_RE.search(text))
+
+
 def _overview_suffix(workspace: str) -> str:
-    """Menu decoration for a course row — only speaks up while the overview is missing."""
-    return "" if course_overview(workspace) else "   · ohne Übersicht"
+    """Menu decoration for a course row — only speaks up until the overview is confirmed."""
+    if course_overview(workspace):
+        return ""
+    return "   · Übersicht unbestätigt" if course_overview_built(workspace) else "   · ohne Übersicht"
 
 
 def _days_since_activity(workspace: str) -> "int | None":
