@@ -24,7 +24,6 @@ Launch modes:
     lernen <workspace>           -> konsole running `claude` in that workspace folder
     lernen --tutor               -> Tutors Choice: one session that picks the course AND tutors it
     lernen --quickie             -> Quickie: one short, winnable Häppchen (5 min), streak-counted
-    lernen [ws] --vorbereitung   -> Vorbereitung: read a self-study overview first, then get quizzed on it
     lernen --print-prompt [ws]   -> print the assembled system prompt (no launch)
     lernen --dry-run [ws]        -> print the launch argv (no launch)
     lernen --install [ws]        -> desktop icon + alias (per-workspace when ws given, via --name/--alias)
@@ -460,7 +459,14 @@ def _ensure_default(data: dict) -> dict:
     "add a course" row, which is the correct first-run experience. (Earlier
     versions seeded a hardcoded prototype folder here.) With courses but no
     explicitly chosen default, Tutors Choice is the default as soon as there is
-    a real choice (>= 2 courses); a single course is its own default."""
+    a real choice (>= 2 courses); a single course is its own default.
+
+    A default that is neither a course nor a known sentinel (a retired sentinel
+    from another host's registry, a course that was unregistered) counts as
+    unset — the menu would otherwise try to launch it as a folder."""
+    default = data.get("default")
+    if default and default not in data["workspaces"] and default not in _SENTINELS:
+        data["default"] = None
     if not data["default"] and data["workspaces"]:
         data["default"] = (_TUTOR_SENTINEL if len(data["workspaces"]) >= 2
                            else data["workspaces"][0])
@@ -492,11 +498,6 @@ def _set_default(path: str) -> str:
         data["default"] = _QUICKIE_SENTINEL
         _save_registry(data)
         return "Quickie"
-    if literal in ("vorbereitung", "vorb", "prep"):
-        data = _load_registry()
-        data["default"] = _VORBEREITUNG_SENTINEL
-        _save_registry(data)
-        return "Vorbereitung"
     data = _load_registry()
     ap = _abs_path(path)
     if ap not in data["workspaces"]:
@@ -986,86 +987,12 @@ def _launch_quickie(data: dict, *, inline: bool) -> int:
 
 
 # ----------------------------------------------------------------------------
-# Vorbereitung: read first, then be quizzed on exactly that
-# ----------------------------------------------------------------------------
-# One course per launch (no pick — the course comes in like a normal launch),
-# one session, two moves: an overview of the topics planned for this session
-# that the user can study on his own, then — once he says he has read it — the
-# course's normal Häppchen loop over those same topics. The launcher owns only
-# the SHAPE of that (overview → wait → quiz). WHICH topics is a tutoring
-# judgment (Themenkarte, in the course CLAUDE.md); HOW the overview is presented
-# is medium mechanics (templates/medium_<name>.md). Neither belongs here.
-def _assemble_vorbereitung_prompt(workspace: str) -> str:
-    """System prompt for a Vorbereitungs-Session — the two moves, nothing else."""
-    return (
-        f"Du fährst eine Vorbereitungs-Session im Kurs-Ordner {workspace}. Sie "
-        "läuft in zwei Zügen: ERST eine selbstlernbare Übersicht über die Themen, "
-        "die für diese Session geplant sind — der User liest sie in Ruhe, du "
-        "fragst währenddessen nichts ab. ERST wenn er sagt, dass er durch ist, "
-        "läuft der normale Häppchen-Betrieb, und zwar über genau diese Themen. "
-        "Woher die Themen kommen (Themenkarte) und wie die Häppchen laufen, steht "
-        "in der CLAUDE.md dieses Ordners §'Lern-Loop' — folge ihr, dupliziere sie "
-        "nicht. Wie die Übersicht im aktiven Medium aussieht, steht unten in der "
-        "Medium-Mechanik.\n\n"
-        + _prompt_common()
-    )
-
-
-def opening_message_vorbereitung(workspace: str) -> str:
-    return (
-        "Vorbereitung, dann Abfrage. Erster Zug: such dir aus der Themenkarte die "
-        "Themen aus, die für diese Session dran sind — wenige, so viele wie in "
-        "eine Session passen; richte dich nach Fortschritt, fehlermuster.md, "
-        "todo.md und der Klausurnähe. Sag mir in EINEM Satz, welche das sind und "
-        "warum, und schreib mir dann dazu eine Übersicht, die ich allein lesen "
-        "und verstehen kann: je Thema die Idee in eigenen Worten, die Notation "
-        "ausgeschrieben, das Vorgehen in Schritten, EIN durchgerechnetes Beispiel "
-        "und die typische Falle. Setz kein Vorwissen voraus, kürze nichts ab, "
-        "frag zwischendurch nichts — ich will lesen, nicht rechnen. Leg sie im "
-        "aktiven Medium an (siehe Systemprompt) und warte dann.\n\n"
-        "Zweiter Zug: erst wenn ich sage, dass ich sie gelesen habe, geht es los "
-        "— dann fragst du mich über genau diese Themen ab, mit den Häppchen aus "
-        "der CLAUDE.md dieses Ordners. Steig direkt ein, ohne die Übersicht noch "
-        "einmal zu erzählen: die war die Erklärung. Merkst du beim Review, dass "
-        "ein Punkt der Übersicht nicht angekommen ist, zeig ihn dort noch einmal "
-        "und geh weiter. " + _LOOP_BRIEF
-    )
-
-
-def _vorbereitung_target(data: dict) -> "str | None":
-    """The course the menu row prepares: the same one a bare launch would open —
-    the registered default, or the first course when the default is a sentinel."""
-    default = data.get("default")
-    if default and default not in _SENTINELS:
-        return default
-    workspaces = data.get("workspaces") or []
-    return workspaces[0] if workspaces else None
-
-
-def _launch_vorbereitung(workspace: str, *, inline: bool = False) -> int:
-    """Launch a Vorbereitungs-Session in `workspace` — one course, one session."""
-    if not os.path.isdir(workspace):
-        print(f"Error: workspace folder not found: {workspace}")
-        return 1
-    inner = [
-        "claude",
-        "--model", _select_model(),
-        "--effort", _select_effort(),
-        "--append-system-prompt", _assemble_vorbereitung_prompt(workspace),
-        opening_message_vorbereitung(workspace),
-    ]
-    return _exec_or_konsole(inner, workspace, inline=inline)
-
-
-# ----------------------------------------------------------------------------
 # startup menu (curses): pick a course, add one, set the default; 10s autostart
 # ----------------------------------------------------------------------------
 _ADD_SENTINEL = "__ADD__"
 _TUTOR_SENTINEL = "__TUTOR__"
 _QUICKIE_SENTINEL = "__QUICKIE__"
-_VORBEREITUNG_SENTINEL = "__VORBEREITUNG__"
-_SENTINELS = (_ADD_SENTINEL, _TUTOR_SENTINEL, _QUICKIE_SENTINEL,
-              _VORBEREITUNG_SENTINEL)
+_SENTINELS = (_ADD_SENTINEL, _TUTOR_SENTINEL, _QUICKIE_SENTINEL)
 
 
 def _needs_konsole_reexec() -> bool:
@@ -1091,8 +1018,7 @@ def _init_colors():
         return {"title": curses.A_BOLD, "cursor": 0, "star": 0,
                 "add": 0, "foot": 0, "count": curses.A_REVERSE | curses.A_BOLD, "path": 0,
                 "hot": curses.A_BOLD, "soon": curses.A_BOLD, "calm": 0,
-                "tutor": curses.A_BOLD, "quickie": curses.A_BOLD,
-                "vorb": curses.A_BOLD}
+                "tutor": curses.A_BOLD, "quickie": curses.A_BOLD}
     curses.start_color()
     try:
         curses.use_default_colors()
@@ -1125,8 +1051,6 @@ def _init_colors():
         "tutor": curses.color_pair(10) | curses.A_BOLD,
         # Bold yellow: warm and quick, visibly not the tutor's purple.
         "quickie": curses.color_pair(9) | curses.A_BOLD,
-        # Bold cyan: the calm, read-first row — neither the tutor nor the quickie.
-        "vorb": curses.color_pair(1) | curses.A_BOLD,
     }
 
 
@@ -1155,12 +1079,10 @@ def _confirm_delete(stdscr, C, path: str) -> bool:
 
 def _menu_rows(workspaces: list) -> list:
     """Quickie on top (as soon as there is a course), then Tutors Choice (only
-    once there is something to choose between), then Vorbereitung (course-scoped,
-    so it needs a course but no choice), the courses, the add row."""
+    once there is something to choose between), the courses, the add row."""
     quickie = [_QUICKIE_SENTINEL] if workspaces else []
     tutor = [_TUTOR_SENTINEL] if len(workspaces) >= 2 else []
-    vorb = [_VORBEREITUNG_SENTINEL] if workspaces else []
-    return quickie + tutor + vorb + workspaces + [_ADD_SENTINEL]
+    return quickie + tutor + workspaces + [_ADD_SENTINEL]
 
 
 def _menu_loop(stdscr, data: dict):
@@ -1211,13 +1133,6 @@ def _menu_loop(stdscr, data: dict):
             elif is_tutor:
                 label = "Tutors Choice — der Tutor wählt den dringendsten Kurs"
                 base = C["tutor"]
-            elif row == _VORBEREITUNG_SENTINEL:
-                # Name the course: this row does not pick one, it prepares the
-                # course a bare launch would open.
-                target = _vorbereitung_target(data)
-                label = ("Vorbereitung — erst Übersicht lesen, dann abgefragt werden"
-                         + (f"   ({Path(target).name})" if target else ""))
-                base = C["vorb"]
             else:
                 label = row + progress.get(row, "")
                 base = C["star"] if is_def else C["path"]
@@ -1242,8 +1157,6 @@ def _menu_loop(stdscr, data: dict):
                 return ("tutor", None) if default in rows else ("launch", workspaces[0])
             if default == _QUICKIE_SENTINEL:
                 return ("quickie", None)
-            if default == _VORBEREITUNG_SENTINEL:
-                return ("vorbereitung", _vorbereitung_target(data))
             return ("launch", default)
 
         ch = stdscr.getch()
@@ -1282,8 +1195,6 @@ def _menu_loop(stdscr, data: dict):
                 return ("tutor", None)
             if rows[idx] == _QUICKIE_SENTINEL:
                 return ("quickie", None)
-            if rows[idx] == _VORBEREITUNG_SENTINEL:
-                return ("vorbereitung", _vorbereitung_target(data))
             return ("launch", rows[idx])
 
 
@@ -1313,8 +1224,6 @@ def run_menu() -> int:
         return _launch_tutor_choice(data, inline=True)
     if action == "quickie":
         return _launch_quickie(data, inline=True)
-    if action == "vorbereitung" and ws:
-        return _launch_vorbereitung(ws, inline=True)
     if action == "add":
         return do_add()  # interactive: claude helps decide the location, then --register's it
     return 0
@@ -1383,10 +1292,6 @@ def main() -> int:
     parser.add_argument("--quickie", action="store_true",
                         help="Quickie: one short, winnable Häppchen (5 min); "
                              "counts towards the streak shown in the menu")
-    parser.add_argument("--vorbereitung", action="store_true",
-                        help="Vorbereitung: one session that first writes a "
-                             "self-study overview of this session's topics, then "
-                             "quizzes you on them (course: positional or default)")
     parser.add_argument("--register", metavar="PATH", default=None,
                         help="scaffold + register PATH as a course (no launch; used by the onboarding session)")
     parser.add_argument("--unregister", metavar="PATH", default=None,
@@ -1397,8 +1302,8 @@ def main() -> int:
                              "also toggled in the menu with `m`")
     parser.add_argument("--set-default", metavar="PATH", dest="set_default", default=None,
                         help="set PATH as the menu's default (auto-selected after 10s); "
-                             "the literals `tutor` / `quickie` / `vorbereitung` make "
-                             "Tutors Choice / the Quickie / the Vorbereitung the default")
+                             "the literals `tutor` / `quickie` make "
+                             "Tutors Choice / the Quickie the default")
     parser.add_argument("--print-prompt", dest="print_prompt", action="store_true",
                         help="print the assembled system prompt and exit (no launch)")
     parser.add_argument("--dry-run", dest="dry_run", action="store_true",
@@ -1420,8 +1325,6 @@ def main() -> int:
             print("* Tutors Choice")
         if data["default"] == _QUICKIE_SENTINEL:
             print("* Quickie")
-        if data["default"] == _VORBEREITUNG_SENTINEL:
-            print("* Vorbereitung")
         for w in data["workspaces"]:
             print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w))
         print(f"Medium: {_MEDIUM_LABELS[_current_medium()]}")
@@ -1438,12 +1341,6 @@ def main() -> int:
             print("Noch kein Kurs registriert — run `lernen` for the menu.")
             return 1
         return _launch_quickie(data, inline=False)
-    if args.vorbereitung:
-        ws = _resolve_workspace(args.workspace)
-        if ws is None:
-            print("Noch kein Kurs registriert — run `lernen` for the menu.")
-            return 1
-        return _launch_vorbereitung(ws, inline=False)
     if args.set_medium:
         print("Medium:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
         return 0

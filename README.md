@@ -79,7 +79,6 @@ lernen --set-default <ws>    # change which course autostarts
 lernen --set-medium <m>      # set the working medium: xournalpp | board
 lernen --tutor               # Tutors Choice: one session that picks the most urgent course and tutors it
 lernen --quickie             # Quickie: one short, winnable Häppchen (5 min); counts a daily streak
-lernen [ws] --vorbereitung   # Vorbereitung: read an overview of this session's topics, then get quizzed
 lernen --add                 # guided onboarding: Claude helps you pick a folder
 lernen --register <ws>       # scaffold + register, no launch (used by onboarding)
 lernen --unregister <ws>     # drop from the menu (touches no files)
@@ -154,25 +153,6 @@ alive (a Quickie today or yesterday), `· bisher 12` otherwise. The session gets
 the numbers to mention in its greeting. A launch counts as a Quickie; the
 launcher never judges whether you finished. `lernen --set-default quickie`
 (or `d` on the row) makes it the 10s autostart target.
-
-### Vorbereitung
-
-Sometimes the topic is new and being quizzed on it cold is the wrong start.
-**Vorbereitung** turns the session around: pick the row (or run `lernen
---vorbereitung`, optionally with a folder) and the session first picks the few
-topics that are due from the course's Themenkarte, says in one sentence which
-ones and why, and writes them up as an overview you can study on your own — the
-idea in plain words, the notation spelled out, the procedure as steps, one
-worked example, the typical trap. Then it waits. Only when you say you have read
-it does the normal Häppchen loop start, over exactly those topics.
-
-Unlike Tutors Choice and the Quickie this mode never picks a course: it prepares
-one, the same one a bare `lernen` would open (the registered default, or the
-first course), and the menu row names it. `lernen <workspace> --vorbereitung`
-prepares any other. Where the overview lands is medium mechanics — a read-only
-board tab `V01 …` with a single „Gelesen — frag mich ab" button, or a
-solution-free reading PDF in Firefox. `lernen --set-default vorbereitung` (or
-`d` on the row) makes it the 10s autostart target.
 
 ### The medium switch
 

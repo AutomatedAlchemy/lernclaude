@@ -130,24 +130,6 @@ opening's counter line are the only consumers. The sentinel is a valid
 `default` (`d`, `--set-default quickie`) and, like the tutor sentinel, never
 leaks out of `_default_workspace` — `_SENTINELS` is the single list to check.
 
-## Vorbereitung: the mode's shape here, its content everywhere else
-
-`--vorbereitung` / the menu row (`_VORBEREITUNG_SENTINEL`, shown with ≥1 course)
-route to `_launch_vorbereitung`: one session in ONE course, launched exactly like
-a course launch. It never picks a course — `_vorbereitung_target` returns the one
-a bare launch would open (registered default, else the first), and the menu row
-names it in its label; `lernen <ws> --vorbereitung` prepares any other. The
-sentinel is a valid `default` like the other two and is listed in `_SENTINELS`.
-
-The launcher owns only the **shape**: overview first, wait for the user to say it
-is read, then the course's normal Häppchen loop over exactly those topics.
-*Which* topics is a tutoring judgment and comes from the Themenkarte in the
-course CLAUDE.md; *how* the overview is presented is medium mechanics and lives
-in `templates/medium_*.md` (board: a read-only tab `V01 …` with one
-„Gelesen"-Button, explicitly not Tab 0; xournalpp: a solution-free reading PDF).
-Neither may migrate into `_assemble_vorbereitung_prompt` — that is the same
-boundary `test_prompts_orient_without_reencoding_the_procedure` guards.
-
 ## The medium switch: choice in the launcher, mechanics in launcher templates
 
 The working medium (Xournal++ vs Tutor Board) is deliberately NOT part of the

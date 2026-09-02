@@ -53,23 +53,6 @@
   Array angeben (`{"a1": ["0.5", "1/2"]}`); der Vergleich faltet Potenz-Notation,
   aber **keine Algebra**.
 
-## Vorbereitungs-Übersicht (Modus „Vorbereitung")
-
-Die Übersicht *vor* der Abfrage ist ein **eigener Tab** (`V01 <Thema>`, harte
-Grenze 24 Zeichen) — nicht Tab 0. Tab 0 bleibt der Fortschrittsspiegel des
-Kurses; V01 ist Lesestoff für diese eine Session.
-
-- In Lesereihenfolge bauen, je Thema: Idee, ausgeschriebene Notation, Vorgehen
-  in Schritten, ein durchgerechnetes Beispiel, die typische Falle. Formeln in
-  `markdown`-Blöcke — dort rendert LaTeX.
-- **Keine Eingabefelder** in diesem Tab: hier wird gelesen, nicht geantwortet.
-  Ganz unten genau EIN `submit`-Knopf („Gelesen — frag mich ab").
-- Übergabe wie bei jedem Häppchen: `create_tab(select: false)`, dann `select_tab`,
-  dann mit `wait_url` (`kinds: ["click","submit"]`) als Hintergrund-Shell auf den
-  Klick warten. Sagt der User es stattdessen im Chat, gilt das genauso.
-- Der Tab bleibt liegen: die Häppchen der Session verweisen auf ihn („wie in
-  V01"), und in Tab 0 bekommt er eine Zeile wie ein Häppchen.
-
 ## Häppchen übergeben und einsammeln
 
 - Bauen mit `create_tab(select: false)`, in der Übersicht eintragen, **dann erst**

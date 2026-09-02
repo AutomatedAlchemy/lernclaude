@@ -95,8 +95,7 @@ def test_registry_state_machine(tmp_path, monkeypatch):
     assert m._ensure_default(data)["default"] == m._TUTOR_SENTINEL   # ≥2 → Tutors Choice
     m._set_default(b)
     assert m._load_registry()["default"] == b
-    for literal, sentinel in (("tutor", m._TUTOR_SENTINEL), ("quickie", m._QUICKIE_SENTINEL),
-                              ("vorbereitung", m._VORBEREITUNG_SENTINEL)):
+    for literal, sentinel in (("tutor", m._TUTOR_SENTINEL), ("quickie", m._QUICKIE_SENTINEL)):
         m._set_default(literal)
         data = m._load_registry()
         assert data["default"] == sentinel and sentinel not in data["workspaces"]
@@ -107,10 +106,11 @@ def test_registry_state_machine(tmp_path, monkeypatch):
     m._set_default(a)
     assert m._unregister_workspace(a) and not m._unregister_workspace(a)
     assert m._ensure_default(m._load_registry())["default"] == b   # default falls back
-    assert m._menu_rows([a, b]) == [m._QUICKIE_SENTINEL, m._TUTOR_SENTINEL,
-                                    m._VORBEREITUNG_SENTINEL, a, b, m._ADD_SENTINEL]
-    # tutor needs a choice; Vorbereitung only needs a course
-    assert m._menu_rows([a]) == [m._QUICKIE_SENTINEL, m._VORBEREITUNG_SENTINEL, a, m._ADD_SENTINEL]
+    assert m._menu_rows([a, b]) == [m._QUICKIE_SENTINEL, m._TUTOR_SENTINEL, a, b, m._ADD_SENTINEL]
+    assert m._menu_rows([a]) == [m._QUICKIE_SENTINEL, a, m._ADD_SENTINEL]   # tutor needs a choice
+    # a default that is neither a course nor a known sentinel (retired sentinel
+    # from another host, unregistered course) counts as unset
+    assert m._ensure_default({"workspaces": [b], "default": "__RETIRED__"})["default"] == b
 
 
 def test_medium_choice_precedence(monkeypatch):
@@ -142,8 +142,7 @@ def test_cli_routes(tmp_path, monkeypatch, spawns):
     a, b = _courses(tmp_path, "A", "B")
     m._register_workspace(a); m._register_workspace(b)
     called = []
-    for name in ("run_menu", "launch", "do_add", "_launch_tutor_choice", "_launch_quickie",
-                 "_launch_vorbereitung"):
+    for name in ("run_menu", "launch", "do_add", "_launch_tutor_choice", "_launch_quickie"):
         monkeypatch.setattr(m, name, lambda *x, _n=name, **k: called.append(_n) or 0)
     cases = {
         (): "run_menu",
@@ -151,8 +150,6 @@ def test_cli_routes(tmp_path, monkeypatch, spawns):
         ("--add",): "do_add",
         ("--tutor",): "_launch_tutor_choice",
         ("--quickie",): "_launch_quickie",
-        ("--vorbereitung",): "_launch_vorbereitung",          # course: the default
-        (b, "--vorbereitung"): "_launch_vorbereitung",        # course: the positional
         ("--dry-run",): None,           # inspection flags: no menu, no launch
         ("--print-prompt",): None,
         ("--register", str(tmp_path / "Neu")): None,
@@ -215,7 +212,6 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
         "tutor": m._assemble_tutor_prompt() + m.opening_message_tutor([a, b]),
         "quickie": m._assemble_quickie_prompt([a, b]) + m.opening_message_quickie([a, b], 3, 7),
         "quickie-solo": m._assemble_quickie_prompt([a]) + m.opening_message_quickie([a], 0, 1),
-        "vorbereitung": m._assemble_vorbereitung_prompt(a) + m.opening_message_vorbereitung(a),
     }
     for name, text in texts.items():
         assert "CLAUDE.md" in text and "Heute:" in text, name
@@ -227,8 +223,6 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
     assert a in texts["tutor"] and b in texts["tutor"] and "2/30" in texts["tutor"]   # dossiers
     assert a in texts["quickie"] and b in texts["quickie"]
     assert b not in texts["quickie-solo"]                    # one course: no pick
-    assert a in texts["vorbereitung"] and b not in texts["vorbereitung"]   # one course, no pick
-    assert "Themenkarte" in texts["vorbereitung"]            # the topics come from there
     monkeypatch.setenv("LERNCLAUDE_MEDIUM", "xournalpp")
     assert ".xopp" in m._assemble_prompt(a) and "get_canvas" not in m._assemble_prompt(a)
 
@@ -248,27 +242,6 @@ def test_scaffold_never_overwrites_and_teaches_the_conventions(tmp_path):
     # and carries no per-medium mechanics
     assert "Systemprompt" in TEMPLATE
     assert "get_canvas" not in TEMPLATE and "xournalpp <datei>" not in TEMPLATE
-
-
-def test_vorbereitung_is_one_course_session(tmp_path, spawns):
-    """Vorbereitung launches ONE interactive session in ONE course — the course
-    a bare launch would open, never a pick across courses."""
-    a, b = _courses(tmp_path, "Physik", "Spanisch")
-    m._register_workspace(a); m._register_workspace(b)
-    m._launch_vorbereitung(b, inline=True)
-    argv = spawns["exec"][-1]
-    assert argv[0] == "claude" and "-p" not in argv
-    assert argv[argv.index("--model") + 1] == "opus"
-    assert argv[argv.index("--effort") + 1] == "medium"
-    assert spawns["cwd"] == b            # the course itself, not the common root
-    assert m._launch_vorbereitung(str(tmp_path / "weg")) == 1   # missing folder: no launch
-    # the menu row targets the default course; a sentinel default falls back
-    m._set_default(b)
-    assert m._vorbereitung_target(m._load_registry()) == b
-    m._set_default("vorbereitung")
-    assert m._load_registry()["default"] == m._VORBEREITUNG_SENTINEL
-    assert m._vorbereitung_target(m._load_registry()) == a
-    assert m._vorbereitung_target({"workspaces": [], "default": None}) is None
 
 
 # ---- parsers of files the launcher does not own --------------------------

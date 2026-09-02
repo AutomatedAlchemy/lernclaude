@@ -14,10 +14,6 @@
   einkreisen/nummerieren, Legende (rot = Fehler mit Korrektur, grün = neu
   Gemeistertes) in den Freiraum darunter, als `haeppchen_NN_reviewt.png`
   speichern und **sofort in Firefox öffnen**.
-- **Vorbereitungs-Übersicht (Modus „Vorbereitung"):** ein eigenes, aufgabenfreies
-  Lesedokument (`.tex` → PDF wie ein Häppchen, nur eben zum Lesen) — sofort in
-  Firefox öffnen und dann warten, bis der User sagt, dass er durch ist; nicht im
-  Chat nachfassen. Das Rechenblatt bleibt bis dahin zu.
 - **Quiz-Häppchen:** per AskUserQuestion-Tool im Chat (1–4 Fragen pro Runde,
   je max. 4 Optionen).
 - **Papier-Variante auf Zuruf** („ich rechne auf Papier"): PDF gedruckt oder in
