@@ -21,11 +21,9 @@
 
 ## Struktur (verbindlich)
 
-- **Tab 0 = „Übersicht"** — Themenkarte als Tabelle, je Thema eine
-  Fortschrittsanzeige (🔴/🟠/🟡/🟢 oder `▓▓▓░░`, mit Legende) und die zugehörigen
-  Häppchen namentlich („→ H03 …"). Dazu die offenen Fehlermuster in je einem
-  Satz und die Zeile `Fortschritt: x/y Häppchen`. Re-Entry-Punkt des Boards und
-  Spiegel von `todo.md`/`fehlermuster.md`, nicht deren Ersatz.
+- **Tab 0 = „Übersicht"** — die Kursübersicht (§Kursübersicht der Kurs-CLAUDE.md)
+  samt Fortschrittsspiegel, siehe den Abschnitt unten. Re-Entry-Punkt des Boards
+  und Spiegel von `todo.md`/`fehlermuster.md`, nicht deren Ersatz.
   Fehlt der Tab, **jetzt** anlegen und mit `reorder_tab(position: 0)` nach vorn
   holen — ein neuer Tab landet immer am Ende.
 - **Jeder weitere Tab = genau EIN Häppchen.** Titel kurz und referenzierbar
@@ -52,6 +50,34 @@
   falsch und verfälscht das Fehlermuster. Für gleichwertige Schreibweisen ein
   Array angeben (`{"a1": ["0.5", "1/2"]}`); der Vergleich faltet Potenz-Notation,
   aber **keine Algebra**.
+
+## Kursübersicht (Tab 0)
+
+Tab 0 ist der eine Übersichts-Tab des Kurses — der Vertrag aus §Kursübersicht der
+Kurs-CLAUDE.md und der Fortschrittsspiegel in einem. Reihenfolge der Blöcke:
+
+1. **Prüfung** — Eckdaten, Format, Bestehen.
+2. **Themenkarte mit Fortschritt** — als Tabelle, je Thema eine Anzeige
+   (🔴/🟠/🟡/🟢 oder `▓▓▓░░`, mit Legende) und die zugehörigen Häppchen namentlich
+   („→ H03 …"); darunter die offenen Fehlermuster in je einem Satz und die Zeile
+   `Fortschritt: x/y Häppchen`. Dieser Block wird nach jedem Review per
+   `update_block` nachgezogen.
+3. **Themen erklärt** — je Thema Idee, Prüfungsanforderung, Notation, Falle,
+   Material. Formeln in `markdown`-Blöcke.
+4. **Materialien** — PDFs, Folien, Altklausuren mit `upload_asset` (bzw.
+   `request_upload`) ans Board hängen und hier verlinken, so kann der Lerner sie
+   vom Board aus öffnen; was sich nicht hochladen lässt, wird beschrieben.
+5. **Vereinbarung** — drin / nicht drin / offene Fragen. Darunter genau EIN
+   `submit`-Knopf („Gelesen & einverstanden"); sonst **keine Eingabefelder** im Tab.
+
+Bestätigung: `wait_url` mit `kinds: ["click","submit"]` als Hintergrund-Shell auf
+den Klick warten; sagt der User es im Chat, gilt das genauso. Danach in `todo.md`
+`Übersicht: bestätigt YYYY-MM-DD` eintragen und erst dann das erste Häppchen.
+
+Nachziehen bei einem Board, dessen Tab 0 bisher nur der Fortschrittsspiegel war:
+die fehlenden Blöcke mit `append_blocks` ergänzen und in die Reihenfolge oben
+bringen; bei einem Umbau `show_board`/`clear_board` mit `keep: true`, damit der
+Spiegel nicht verloren geht.
 
 ## Häppchen übergeben und einsammeln
 

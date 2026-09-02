@@ -255,12 +255,35 @@ _LOOP_BRIEF = (
 )
 
 
-def opening_message(workspace: str) -> str:
+def _overview_brief() -> str:
+    """The Kursübersicht convention for a session that may land in a course
+    without one: build it first. Only the PRESENCE test and the bookkeeping
+    line are launcher-owned; what the overview contains is the course
+    CLAUDE.md's §Kursübersicht, and older courses copy that section from the
+    template — so the template path is the one file this names."""
     return (
+        "Hat der Kurs noch keine bestätigte Kursübersicht (Zeile „Übersicht: "
+        "bestätigt …“ in seiner todo.md bzw. „Übersicht: fehlt“ im Dossier), "
+        "kommt sie VOR dem ersten Häppchen: bau sie nach §'Kursübersicht' der "
+        "CLAUDE.md des Kurs-Ordners. Fehlt dieser Abschnitt dort (älterer Kurs), "
+        f"übernimm ihn aus {TEMPLATE_DIR / 'LERNLOOP_TEMPLATE.md'} in die "
+        "Kurs-CLAUDE.md und arbeite dann danach. Wie die Übersicht im aktiven "
+        "Medium aussieht, steht in der Medium-Mechanik. Geh sie mit mir durch, "
+        "warte auf meine Bestätigung, trag dann „Übersicht: bestätigt "
+        "YYYY-MM-DD“ (heutiges Datum) in todo.md ein — und erst dann das erste "
+        "Häppchen."
+    )
+
+
+def opening_message(workspace: str) -> str:
+    text = (
         "Lass uns lernen. Führe die Lern-Loop aus der CLAUDE.md dieses Ordners aus: "
         "öffne das Lern-Set (wie dort beschrieben) und gib mir dann direkt das "
         "nächste Häppchen. " + _LOOP_BRIEF
     )
+    if course_overview(workspace) is None:
+        text += " " + _overview_brief()
+    return text
 
 
 # ----------------------------------------------------------------------------
@@ -348,7 +371,9 @@ def _scaffold_workspace(workspace: str) -> None:
     # are created on demand, not up front.
     for name, header in (
         ("todo.md", "# todo — Wiedereinstieg\n\n> Fach / Klausurdatum / Stand / aktive Arbeitsdateien hier.\n\n"
-                    "Fortschritt: 0/? Häppchen  *(y beim ersten Review schätzen — erst dann zeigt das Menü etwas)*\n"),
+                    "Fortschritt: 0/? Häppchen  *(y beim ersten Review schätzen — erst dann zeigt das Menü etwas)*\n"
+                    "Übersicht: fehlt  *(wird beim Anlegen im Arbeitsmedium gebaut und vom User bestätigt — "
+                    "dann hier „Übersicht: bestätigt YYYY-MM-DD“)*\n"),
         ("fehlermuster.md", "# Fehlermuster\n\n> Nach JEDEM Review: Zitat → warum falsch → was stattdessen. Dominante Muster oben.\n"),
     ):
         f = ws / name
@@ -382,8 +407,11 @@ def opening_message_onboard() -> str:
         "4. Danach: sichte das Material und fülle in der CLAUDE.md die Eckdaten (Fach, Klausurdatum/"
         "-modus, Hilfsmittel) UND den Themenkarte-Abschnitt aus (Klausur-Themen + je Thema die typische "
         "Falle). Situative Extra-Dateien (notebooklm_lernpausen.md für Lernpausen-Videos) "
-        "legst du nur an, wenn wir sie brauchen. "
-        "Dann starten wir den ersten Häppchen-Durchlauf."
+        "legst du nur an, wenn wir sie brauchen.\n"
+        "5. Dann die Kursübersicht: bau sie nach §'Kursübersicht' der CLAUDE.md im aktiven "
+        "Medium (Mechanik im Systemprompt), geh sie mit mir durch, bis ich sie bestätige, "
+        "und trag „Übersicht: bestätigt YYYY-MM-DD“ in todo.md ein. "
+        "Erst dann starten wir den ersten Häppchen-Durchlauf."
     )
 
 
@@ -674,6 +702,28 @@ def _progress_suffix(workspace: str) -> str:
     return f"   · {done}/{target} Häppchen{mark}"
 
 
+# Second bookkeeping line the workspace session maintains in todo.md, written
+# once the user has confirmed the Kursübersicht in the working medium:
+# "Übersicht: bestätigt 2026-09-02". Same contract as the Fortschritt line —
+# parse, never judge; the scaffolded "Übersicht: fehlt" placeholder does not match.
+_OVERVIEW_RE = re.compile(r"(?:ü|ue)bersicht:\s*bestätigt\s*(\d{4}-\d{2}-\d{2})", re.IGNORECASE)
+
+
+def course_overview(workspace: str) -> "str | None":
+    """The confirmation date from the workspace todo.md's Übersicht line, or None."""
+    try:
+        text = (Path(workspace) / "todo.md").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = _OVERVIEW_RE.search(text)
+    return match.group(1) if match else None
+
+
+def _overview_suffix(workspace: str) -> str:
+    """Menu decoration for a course row — only speaks up while the overview is missing."""
+    return "" if course_overview(workspace) else "   · ohne Übersicht"
+
+
 def _days_since_activity(workspace: str) -> "int | None":
     """Days since anything in the course's living files changed, or None."""
     ws = Path(workspace)
@@ -781,8 +831,10 @@ def _course_dossier(workspace: str) -> str:
     Depth stays with the session: it reads the candidates' files itself."""
     prog = course_progress(workspace)
     days = _days_since_activity(workspace)
+    confirmed = course_overview(workspace)
     facts = [
         f"Fortschritt: {prog[0]}/{prog[1]} Häppchen" if prog else "Fortschritt: unbekannt",
+        f"Übersicht: bestätigt {confirmed}" if confirmed else "Übersicht: fehlt",
         f"letzte Aktivität: vor {days} Tagen" if days is not None else "letzte Aktivität: unbekannt",
     ]
     topics = _themenkarte_size(workspace)
@@ -824,7 +876,7 @@ def opening_message_tutor(workspaces: list) -> str:
         "Rückfrage direkt los: lies die CLAUDE.md des gewählten Kurs-Ordners, "
         "führe dessen Lern-Loop aus (Lern-Set öffnen, wie dort beschrieben) und "
         "gib mir das nächste Häppchen. Alle Dateiarbeit mit absoluten Pfaden im "
-        "gewählten Kurs-Ordner. " + _LOOP_BRIEF
+        "gewählten Kurs-Ordner. " + _LOOP_BRIEF + " " + _overview_brief()
     )
 
 
@@ -963,8 +1015,9 @@ def opening_message_quickie(workspaces: list, streak: int = 0, total: int = 0) -
         "verabschiede dich in einem Satz — kein Nachschieben, keine Predigt, kein "
         "„du solltest noch“. Halte in todo.md die Zeile „Fortschritt: x/y Häppchen“ "
         "aktuell (ein Quickie zählt als Häppchen) und notiere die Quickies mit "
-        "Datum und Thema in todo.md, damit die nächste Session sie sieht. Alle "
-        "Dateiarbeit mit absoluten Pfaden im Kurs-Ordner."
+        "Datum und Thema in todo.md, damit die nächste Session sie sieht. Eine "
+        "fehlende Kursübersicht ist heute nicht dein Job — die baut die normale "
+        "Session. Alle Dateiarbeit mit absoluten Pfaden im Kurs-Ordner."
     )
 
 
@@ -1098,7 +1151,7 @@ def _menu_loop(stdscr, data: dict):
     interacted = False
     start = time.monotonic()
     exams = _exam_banner_lines()   # read once: the menu lives for seconds, not hours
-    progress = {ws: _progress_suffix(ws) for ws in workspaces}  # same lifetime
+    progress = {ws: _progress_suffix(ws) + _overview_suffix(ws) for ws in workspaces}  # same lifetime
     medium = str(data.get("medium") or "xournalpp")
     if medium not in _MEDIA:
         medium = "xournalpp"
@@ -1326,7 +1379,7 @@ def main() -> int:
         if data["default"] == _QUICKIE_SENTINEL:
             print("* Quickie")
         for w in data["workspaces"]:
-            print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w))
+            print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w) + _overview_suffix(w))
         print(f"Medium: {_MEDIUM_LABELS[_current_medium()]}")
         return 0
     if args.tutor:

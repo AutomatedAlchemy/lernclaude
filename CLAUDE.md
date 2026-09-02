@@ -70,6 +70,35 @@ sync: the template (todo.md bullet + review step), the scaffolded `todo.md`
 skeleton, and `opening_message` (so pre-existing workspaces adopt it without
 manual edits).
 
+## Kursübersicht: presence in the launcher, content in the template, look in the medium
+
+Every course gets an overview before its first Häppchen — the contract between
+tutor and learner about what the exam, the topics and the materials cover. It
+is board-native by design: the learner only sees the working medium, never the
+files on the lernclaude host, so the overview is a medium object (board: Tab 0
+with the materials attached via `upload_asset`; xournalpp: a reading PDF), not
+a markdown file. The split follows the Fortschritt pattern:
+
+- **Content** is `templates/LERNLOOP_TEMPLATE.md` §Kursübersicht (Prüfung →
+  Themen → Materialien → Vereinbarung) and, once stamped, the course CLAUDE.md.
+  It must not migrate into `main.py` — `test_prompts_orient_without_reencoding_
+  the_procedure` only allows the section name and the template path there.
+- **Look** is `templates/medium_<name>.md` (block order, the single
+  „Gelesen & einverstanden" submit, `wait_url`, the backfill of an old Tab 0).
+- **Presence** is the launcher's: `course_overview` parses one line the session
+  writes to `todo.md` after the user confirmed (`Übersicht: bestätigt
+  YYYY-MM-DD`), same fail-into-silence contract as `course_progress`; the
+  scaffolded `Übersicht: fehlt` placeholder deliberately does not match.
+  Consumers: `_overview_suffix` (menu row `· ohne Übersicht`, `--list`), the
+  tutor dossier line, and `_overview_brief` — appended to `opening_message`
+  only while the line is missing, always to `opening_message_tutor` (the
+  course is chosen inside the session), never to the Quickie.
+
+Backfill for pre-existing courses is the same mechanism: the brief tells the
+session to copy the §Kursübersicht section from the template into a course
+CLAUDE.md that lacks it, build the overview, get it confirmed, write the line.
+Nothing in the seven existing workspaces was edited by hand.
+
 ## Tutors Choice
 
 The menu's top row (only shown with ≥2 courses) and `--tutor` route to
@@ -139,8 +168,8 @@ pieces: the *choice* (registry key `medium`, menu key `m`, `--set-medium`,
 (`templates/medium_<name>.md`, appended to the system prompt by
 `_assemble_prompt` — only the active medium's file, fail-into-silence when
 missing). Course CLAUDE.mds and the workspace template carry no medium
-machinery; they point at "Systemprompt" (`test_template_defers_the_medium_to_
-the_launcher` pins this). Escape hatches the prompt grants: mid-session verbal
+machinery; they point at "Systemprompt" (the last asserts of
+`test_scaffold_never_overwrites_and_teaches_the_conventions` pin this). Escape hatches the prompt grants: mid-session verbal
 switching (next Häppchen in the new medium), and a course CLAUDE.md may pin a
 fixed medium, which then wins — the board-native language courses rely on that.
 

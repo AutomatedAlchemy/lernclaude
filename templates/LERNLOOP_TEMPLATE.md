@@ -26,6 +26,33 @@ automatisch mit. Die Häppchen rotieren durch diese Themen.
 | 1 | «…» | «…» |
 | 2 | «…» | «…» |
 
+## Kursübersicht (beim Anlegen bauen, vom User bestätigen)
+
+Der Vertrag zwischen Tutor und Lerner darüber, was Kurs und Prüfung umfassen.
+Beim Anlegen aus dem Material gebaut, vom User allein gelesen und bestätigt;
+nach jeder Änderung der Themenkarte nachgezogen und neu bestätigt. Ohne
+bestätigte Übersicht kein Häppchen.
+
+Inhalt, in dieser Reihenfolge — kein Vorwissen voraussetzen, nichts abkürzen,
+der User soll sie ohne Rückfrage lesen und verstehen können:
+
+1. **Prüfung** — die Eckdaten von oben, dazu Aufgabenformat (Rechnen, Ankreuzen,
+   Herleiten, mündlich), Gewichtung und was „bestanden" konkret heißt.
+2. **Themen** — je Zeile der Themenkarte: die Idee in eigenen Worten, was die
+   Prüfung dazu verlangt (Aufgabentyp, Tiefe), die Notation ausgeschrieben, die
+   typische Falle, und welches Material das Thema abdeckt.
+3. **Materialien** — jede Datei und jeder Ordner im Kurs-Ordner und jede Quelle
+   (Folien, Übungsblätter, Altklausuren, Skript, Bücher): was es ist, wofür es
+   taugt, wie der Loop es nutzt. Der Lerner soll jedes Material von der
+   Übersicht aus erreichen können.
+4. **Vereinbarung** — was drin ist, was ausdrücklich nicht, offene Fragen an den
+   User. Der User bestätigt; erst dann gilt sie.
+
+Ort: im Arbeitsmedium (Mechanik im Systemprompt), nicht als Datei — der Lerner
+sieht nur das Medium. Buchung: genau eine Zeile `Übersicht: bestätigt YYYY-MM-DD`
+in `todo.md` (bis dahin `Übersicht: fehlt`); das `lernen`-Startmenü liest genau
+diese Zeile. Bei Neubestätigung das Datum ersetzen.
+
 ## Die drei Kern-Dateien
 
 - **`CLAUDE.md`** (diese Datei) = *wie* + Eckdaten + Themenkarte. Zuerst lesen.
@@ -34,6 +61,7 @@ automatisch mit. Die Häppchen rotieren durch diese Themen.
   y = aktuelle Schätzung, wie viele Häppchen es insgesamt bis zur Klausurbereitschaft
   braucht. y ist eine lebende Schätzung (nach jedem Review neu bewerten, gern anhand
   der Themenkarte). Das `lernen`-Startmenü liest genau diese Zeile als Kurs-Fortschritt.
+  Zweite Pflichtzeile: `Übersicht: bestätigt YYYY-MM-DD` (siehe §Kursübersicht).
 - **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Nach JEDEM
   Review mitziehen: User-Zitat → warum falsch → was stattdessen. Dominante Muster oben halten.
 - **`Personalisierte_Übungen/`** — die Häppchen (`haeppchen_NN.tex` → `.pdf`),
@@ -56,6 +84,9 @@ des aktiven Mediums steht im Systemprompt der Session. **Nicht erfragen.** Der
 User darf **mitten im Lernen wechseln** („lass uns aufs Board", „zurück zu
 Xournal") — dann ab dem nächsten Häppchen im neuen Medium weiterarbeiten und ihn
 erinnern, fürs nächste Mal den Schalter im Menü umzulegen.
+
+**0b. Kursübersicht** — ohne bestätigte Übersicht (§Kursübersicht, Zeile in
+`todo.md`) kein Häppchen: erst bauen bzw. nachziehen, bestätigen lassen, buchen.
 
 **1. Lern-Set öffnen** — auf „lass uns lernen" das Arbeitsfenster des aktiven
 Mediums öffnen (wie im Systemprompt beschrieben, ohne nachzufragen) plus

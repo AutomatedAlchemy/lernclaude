@@ -219,6 +219,17 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
         for forbidden in ("cheatsheet", "basics.pdf", "haeppchen_"):
             assert forbidden not in text, (name, forbidden)
         assert "Fortschritt: x/y Häppchen" in text, name    # the menu reads that line
+    # the Kursübersicht: the launcher only says "build it first" and names the
+    # template the section is copied from — the content stays in the course CLAUDE.md
+    template_path = str(m.TEMPLATE_DIR / "LERNLOOP_TEMPLATE.md")
+    assert "Kursübersicht" in texts["course"] and template_path in texts["course"]
+    assert "Kursübersicht" in texts["tutor"] and "Übersicht: fehlt" in texts["tutor"]
+    assert template_path not in texts["quickie"]              # never the Quickie's job
+    Path(a, "todo.md").write_text("Fortschritt: 2/30 Häppchen\nÜbersicht: bestätigt 2026-09-02\n",
+                                  encoding="utf-8")
+    assert template_path not in m.opening_message(a)         # confirmed: no nudge
+    assert "Übersicht: bestätigt 2026-09-02" in m.opening_message_tutor([a, b])
+    assert "Kursübersicht" in m.opening_message_onboard()
     assert a in texts["course"]
     assert a in texts["tutor"] and b in texts["tutor"] and "2/30" in texts["tutor"]   # dossiers
     assert a in texts["quickie"] and b in texts["quickie"]
@@ -237,11 +248,32 @@ def test_scaffold_never_overwrites_and_teaches_the_conventions(tmp_path):
     fresh = tmp_path / "Leer"; fresh.mkdir()
     m._scaffold_workspace(str(fresh))
     assert "Fortschritt: 0/?" in (fresh / "todo.md").read_text(encoding="utf-8")
+    assert m.course_overview(str(fresh)) is None              # placeholder does not count
     assert "Fortschritt: x/y Häppchen" in TEMPLATE
+    assert "Kursübersicht" in TEMPLATE and "Übersicht: bestätigt" in TEMPLATE
     # the medium is the launcher's: the template points at the system prompt
     # and carries no per-medium mechanics
     assert "Systemprompt" in TEMPLATE
     assert "get_canvas" not in TEMPLATE and "xournalpp <datei>" not in TEMPLATE
+
+
+def test_course_overview_parses_never_judges(tmp_path):
+    """The Übersicht line is bookkeeping the workspace session writes once the
+    user has confirmed the overview in the medium; the launcher reads it and
+    fails into silence like the Fortschritt line."""
+    (a,) = _courses(tmp_path, "Physik")
+    todo = Path(a, "todo.md")
+    assert m.course_overview(str(tmp_path / "weg")) is None   # no file
+    todo.write_text("Fortschritt: 1/9 Häppchen\n", encoding="utf-8")
+    assert m.course_overview(a) is None                       # no line
+    todo.write_text("Übersicht: fehlt  *(…)*\n", encoding="utf-8")
+    assert m.course_overview(a) is None                       # the scaffolded placeholder
+    assert m._overview_suffix(a) == "   · ohne Übersicht"
+    assert "Übersicht: fehlt" in m._course_dossier(a)
+    todo.write_text("**Uebersicht: bestätigt 2026-01-05**\n", encoding="utf-8")
+    assert m.course_overview(a) == "2026-01-05"
+    assert m._overview_suffix(a) == ""
+    assert "Übersicht: bestätigt 2026-01-05" in m._course_dossier(a)
 
 
 # ---- parsers of files the launcher does not own --------------------------

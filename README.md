@@ -99,7 +99,8 @@ A fresh clone has nothing registered, so the menu shows only "add a course" —
 there is no built-in default folder.
 
 Each course row also shows its progress, e.g. `· 7/24 Häppchen` (and `✓ bereit`
-once the target is reached). The numbers come from a single line the study
+once the target is reached), and `· ohne Übersicht` while the course has no
+confirmed overview yet (see *The course overview* below). The numbers come from a single line the study
 session itself maintains in the workspace's `todo.md`:
 
 ```
@@ -210,6 +211,25 @@ struck through (`~~…~~`), or marked `abgelegt` / `bestanden` / `Rücktritt` /
 path, it starts a Claude session that searches your filesystem with you, agrees on
 a location, and then calls `--register` itself.
 
+### The course overview (the contract)
+
+Every course gets an overview before its first Häppchen: what the exam asks,
+every topic of the Themenkarte explained from scratch, every material in the
+course folder named and explained, and an agreement on what is in and what is
+out. You read it on your own, then confirm it — that confirmation is the
+contract between you and the tutor about what the course covers. It lives in
+the working medium (on the board it is Tab 0, with the material attached so you
+can open it from there), not in a file: the learner only ever sees the medium.
+
+The launcher owns none of the content. It reads one bookkeeping line the
+session writes to the course's `todo.md` once you have confirmed
+(`Übersicht: bestätigt 2026-09-02`), shows `· ohne Übersicht` on the menu row
+until then, and tells a normal launch or Tutors Choice to build the overview
+first. Courses created before this existed pick it up the same way on their
+next launch; the session copies the `Kursübersicht` section from the template
+into the course `CLAUDE.md` if it is missing. The Quickie never builds one.
+Changing the Themenkarte means the overview is redone and confirmed again.
+
 ## Workspace layout
 
 Onboarding stamps a minimal skeleton and never overwrites an existing file:
@@ -217,7 +237,7 @@ Onboarding stamps a minimal skeleton and never overwrites an existing file:
 | Path | Role |
 |---|---|
 | `CLAUDE.md` | The Lern-Loop procedure and exam facts. Stamped from `templates/LERNLOOP_TEMPLATE.md`. |
-| `todo.md` | Where you left off — subject, exam date, active files |
+| `todo.md` | Where you left off — subject, exam date, active files, plus the two bookkeeping lines the menu reads (`Fortschritt: x/y Häppchen`, `Übersicht: bestätigt YYYY-MM-DD`) |
 | `fehlermuster.md` | Error-pattern log; the loop reads this to target the next exercise |
 | `Personalisierte_Übungen/` | Generated exercises land here |
 

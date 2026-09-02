@@ -9,6 +9,9 @@
   über dem Aufgaben-PDF ist ausdrücklich **kein** Modus.
 - **Lern-Set öffnen** („lass uns lernen"): Referenz-/Mitnehm-Blätter + die
   zuletzt geänderte Übung in Firefox + das aktuelle `.xopp` in Xournal++.
+- **Kursübersicht** (§Kursübersicht der Kurs-CLAUDE.md): ein aufgabenfreies
+  Lesedokument `kursuebersicht.tex` → PDF im Kurs-Ordner, sofort in Firefox
+  öffnen; die Bestätigung kommt im Chat, dann die Zeile in `todo.md`.
 - **Neues Häppchen:** das PDF sofort selbst in Firefox öffnen, nicht nachfragen.
 - **Review:** das neueste `.xopp` zu PNG exportieren, Fehlerstellen rot
   einkreisen/nummerieren, Legende (rot = Fehler mit Korrektur, grün = neu
