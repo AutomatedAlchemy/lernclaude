@@ -14,10 +14,13 @@
    `clear_board`), solange die Auswahl kontoweit gilt und mehrere Lern-Sessions
    parallel laufen. (Frühere Sessions hielten `select_board` für nicht vorhanden
    und bauten blind über Edit-Links; das ist überholt.)
-3. **Erst jetzt Firefox** — auf die konkrete Board-URL (das Feld `url` aus
-   `list_boards` / `select_board`), nicht auf die Startseite. Die Startseite ist nur die Board-Liste; der User
-   müsste selbst weiterklicken. Hat er schon eine Board-Seite offen, holt
-   `open_board_for_user` ihn herüber, statt ein zweites Fenster aufzumachen.
+3. **`open_board_for_user`, dann erst Firefox** — immer zuerst
+   `open_board_for_user` mit einem kurzen `note`, was dort wartet. Der Call
+   erreicht nur gerade offene Board-Seiten und meldet, wie viele er erreicht hat.
+   Meldet er ≥ 1, hat der User den Knopf und es braucht kein zweites Fenster.
+   Meldet er 0, schaut niemand zu → **jetzt Firefox** auf die konkrete Board-URL
+   (das Feld `url` aus `list_boards` / `select_board`), nicht auf die Startseite.
+   Die Startseite ist nur die Board-Liste; der User müsste selbst weiterklicken.
 4. `list_tabs` — der Ankunftsbericht. `submissions_you_have_not_read` heißt:
    der User hat abgegeben, während niemand zusah → **zuerst `read_board` auf
    diesen Tab und reviewen**, bevor irgendetwas Neues entsteht.
