@@ -68,6 +68,13 @@ diese Zeile. Bei Neubestätigung das Datum ersetzen.
   eigenständige `.xopp`-Rechenblätter (nicht auf dem PDF!), `haeppchen_NN_reviewt.png`
   (annotierte Reviews).
 
+**Schreibrechte.** Die Session schreibt `todo.md`, `fehlermuster.md`,
+`Personalisierte_Übungen/` und die situativen Dateien des nächsten Abschnitts. In
+dieser `CLAUDE.md` ändert sie nur die Eckdaten, die Themenkarte und
+§Kursübersicht, und das als einzelne Änderungen — die Datei wird nie neu
+geschrieben. Kursmaterial (Folien, Übungsblätter, Altklausuren, Skripte) wird nie
+geändert, verschoben oder gelöscht.
+
 ## Situative Dateien — nur anlegen, wenn gebraucht
 
 - **`notebooklm_lernpausen.md`** (nur wenn du Lernpausen-Videos willst) — EIN
@@ -144,4 +151,5 @@ Chat-Erklärungen **OHNE LaTeX** — kein `$...$`, kein `\frac`. Unicode-Notatio
 ## Building the LaTeX (falls Häppchen als PDF)
 
 `pdflatex -interaction=nonstopmode haeppchen_NN.tex`. `.aux`/`.log` sind Wegwerf-
-Nebenprodukte. Nach dem Klausurdatum: dieser Workspace wird archiviert/eingefroren.
+Nebenprodukte. Nach dem Klausurdatum wird dieser Workspace vom User archiviert;
+die Session ändert daran nichts.
