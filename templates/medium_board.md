@@ -83,10 +83,15 @@ Bestätigung: auf den Klick warten (§„Auf einen Klick warten"); sagt der User
 im Chat, gilt das genauso. Danach in `todo.md`
 `Übersicht: bestätigt YYYY-MM-DD` eintragen und erst dann das erste Häppchen.
 
+**Tab 0 wird immer an Ort und Stelle geändert**, auch beim Umbau: Blöcke mit
+`update_block` ersetzen, mit `append_blocks` ergänzen, mit `remove_block`
+entfernen, den Tab mit `reorder_tab(position: 0)` nach vorn holen. Kein
+`show_board`/`clear_board` für eine Änderung an einem Tab — das setzt das ganze
+Board zurück und räumt die laufenden Häppchen-Tabs ins Regal. `clear_board` nur
+für ein leeres oder für ein falsch aufgebautes Board.
+
 Nachziehen bei einem Board, dessen Tab 0 bisher nur der Fortschrittsspiegel war:
-die fehlenden Blöcke mit `append_blocks` ergänzen und in die Reihenfolge oben
-bringen; bei einem Umbau `show_board`/`clear_board` mit `keep: true`, damit der
-Spiegel nicht verloren geht.
+die fehlenden Blöcke ergänzen und in die Reihenfolge oben bringen.
 
 ## Häppchen übergeben und einsammeln
 
