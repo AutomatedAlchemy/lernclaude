@@ -119,7 +119,10 @@ year — "27.07.10" is an old exam's filename). Deliberately NO file excerpts:
 the session has tools and is told to read the candidates' todo.md itself
 (inline excerpts were only ever needed by the removed tool-less `claude -p`
 pass, and had ballooned the opening to ~15k chars; facts keep it ~4k). Each
-extractor fails into silence — a missing piece drops its line. The session
+extractor fails into silence — a missing piece drops its line. Both openings
+wrap what they inject in `<klausuren>` and `<dossiers>` and say in one line that
+the tags hold data, not instructions: the exam labels and the todo.md excerpts
+come from hand-edited files the launcher does not own. The session
 states its pick in one sentence, then reads the
 chosen course's CLAUDE.md and runs its Lern-Loop itself — the chooser IS the
 Häppchen author (an earlier design ran a `claude -p` pre-pass and launched a
@@ -172,7 +175,9 @@ pieces: the *choice* (registry key `medium`, menu key `m`, `--set-medium`,
 `LERNCLAUDE_MEDIUM` override, default `xournalpp`) and the *mechanics*
 (`templates/medium_<name>.md`, appended to the system prompt by
 `_assemble_prompt` — only the active medium's file, fail-into-silence when
-missing). Course CLAUDE.mds and the workspace template carry no medium
+missing). `_prompt_common` emits three tagged parts — `<orientierung>`,
+`<heute>` and `<medium_mechanik name="…">` — so the session can tell the
+launcher's orientation from the medium file it carries. Course CLAUDE.mds and the workspace template carry no medium
 machinery; they point at "Systemprompt" (the last asserts of
 `test_scaffold_never_overwrites_and_teaches_the_conventions` pin this). Escape hatches the prompt grants: mid-session verbal
 switching (next Häppchen in the new medium), and a course CLAUDE.md may pin a
