@@ -214,6 +214,14 @@ ceiling, not an oversight: this is interactive tutoring, where latency is felt m
 than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
 `CLAUDE_TIER_OVERRIDE` forces a tier for tests.
 
+That policy is what the registry keys `model` and `effort` mean by `auto`, their
+default. They are two more launcher-level switches shaped exactly like the medium
+one (menu keys `o` / `e`, `--set-model` / `--set-effort`, env override on top),
+and `_select_model` / `_select_effort` are the only readers. An explicit pick
+bypasses `tier_effort` on purpose: choosing `high` in the menu on a Max host must
+give high, or the switch would be a lie. The menu label for the medium row reads
+"Userspace"; the registry key, the templates and the code all still say `medium`.
+
 ## Commits: make them yourself, leave the push
 
 Commit here without asking. The umbrella rule in [`../REPOS.md`](../REPOS.md)

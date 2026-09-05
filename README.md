@@ -76,7 +76,9 @@ lernen <workspace>           # skip the menu, launch straight into a folder
 lernen --menu                # force the menu
 lernen --list                # print registered courses (* marks the default)
 lernen --set-default <ws>    # change which course autostarts
-lernen --set-medium <m>      # set the working medium: xournalpp | board
+lernen --set-medium <m>      # set the working medium (Userspace): xournalpp | board
+lernen --set-model <m>       # set the model: auto | opus | sonnet | fable
+lernen --set-effort <e>      # set the effort: auto | low | medium | high
 lernen --tutor               # Tutors Choice: one session that picks the most urgent course and tutors it
 lernen --quickie             # Quickie: one short, winnable Häppchen (5 min); counts a daily streak
 lernen --add                 # guided onboarding: Claude helps you pick a folder
@@ -255,7 +257,7 @@ All optional — the tool works with none of them set.
 | `LERNCLAUDE_ROOT` | Where guided onboarding starts searching (default: `$HOME`) |
 | `LERNCLAUDE_EXAMS` | Markdown file with your exam-date table (banner off when unset; registry key `exams_file` does the same) |
 | `LERNCLAUDE_MODEL` | Pin the model, skipping tier detection |
-| `LERNCLAUDE_EFFORT` | Pin the effort level (default `medium`) |
+| `LERNCLAUDE_EFFORT` | Pin the effort level (default: the menu pick, else `medium`) |
 | `LERNCLAUDE_MEDIUM` | Override the working medium for one launch (`xournalpp` \| `board`) |
 | `CLAUDE_TIER_OVERRIDE` | Force `max` / `pro` instead of detecting |
 
@@ -266,6 +268,12 @@ accordingly: **Max → opus**, **Pro → sonnet**, both at `medium` effort. Medi
 deliberate — the loop is interactive tutoring, where latency is felt more than
 extra reasoning depth helps. Both the mapping and the effort band are two dicts at
 the top of `tier.py`; edit them if you disagree.
+
+That is the `auto` setting. The menu has two more switches next to the Userspace
+row — `o` cycles the model (auto | Opus | Sonnet | Fable), `e` the effort
+(auto | low | medium | high) — and an explicit pick is used as-is, without the
+tier clamp. Both persist in the registry; `--set-model` / `--set-effort` set them
+from a script, `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override one launch.
 
 ### The registry
 

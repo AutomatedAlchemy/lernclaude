@@ -169,6 +169,50 @@ def _set_medium(medium: str) -> str:
     return medium
 
 
+# ----------------------------------------------------------------------------
+# model and effort: the same launcher-level switch shape as the medium
+# ----------------------------------------------------------------------------
+# `auto` keeps the tier policy in tier.py (opus on Max, sonnet on Pro, clamped
+# to medium effort). Any other value is the user's explicit pick and is passed
+# through unclamped — picking `high` in the menu means high.
+_MODELS = ("auto", "opus", "sonnet", "fable")
+_MODEL_LABELS = {"auto": "automatisch (Tier)", "opus": "Opus",
+                 "sonnet": "Sonnet", "fable": "Fable"}
+_EFFORTS = ("auto", "low", "medium", "high")
+_EFFORT_LABELS = {"auto": "automatisch (Tier)", "low": "low",
+                  "medium": "medium", "high": "high"}
+
+
+def _current_model() -> str:
+    """The picked model: env override wins, else registry, else auto."""
+    if os.environ.get("LERNCLAUDE_MODEL"):
+        return os.environ["LERNCLAUDE_MODEL"]
+    raw = str(_load_registry().get("model") or "auto").strip().lower()
+    return raw if raw in _MODELS else "auto"
+
+
+def _current_effort() -> str:
+    """The picked effort: env override wins, else registry, else auto."""
+    if os.environ.get("LERNCLAUDE_EFFORT"):
+        return os.environ["LERNCLAUDE_EFFORT"]
+    raw = str(_load_registry().get("effort") or "auto").strip().lower()
+    return raw if raw in _EFFORTS else "auto"
+
+
+def _set_model(model: str) -> str:
+    data = _load_registry()
+    data["model"] = model
+    _save_registry(data)
+    return model
+
+
+def _set_effort(effort: str) -> str:
+    data = _load_registry()
+    data["effort"] = effort
+    _save_registry(data)
+    return effort
+
+
 def _medium_prompt(medium: str) -> str:
     """The medium's mechanics from its template file — empty when missing."""
     try:
@@ -293,21 +337,26 @@ def opening_message(workspace: str) -> str:
 # launch
 # ----------------------------------------------------------------------------
 def _select_model() -> str:
-    """The Lern-Loop runs on this host's tier model — opus on Max, sonnet on
-    Pro/unknown (see `tier.py`). ``LERNCLAUDE_MODEL`` pins it explicitly."""
-    pinned = os.environ.get("LERNCLAUDE_MODEL")
-    if pinned:
-        return pinned
+    """The picked model, or this host's tier model when the pick is `auto` —
+    opus on Max, sonnet on Pro/unknown (see `tier.py`). The menu switch (`o`),
+    ``--set-model`` and ``LERNCLAUDE_MODEL`` all feed `_current_model`."""
+    picked = _current_model()
+    if picked != "auto":
+        return picked
     from tier import model_effort
     return model_effort()[0]
 
 
 def _select_effort() -> str:
-    """Medium — the Lern-Loop is interactive tutoring, not a heavy one-shot job.
-    Routed through the tier band so a Max host never lands below (or above)
-    medium. ``LERNCLAUDE_EFFORT`` pins it explicitly."""
+    """The picked effort, or the tier band when the pick is `auto`. Auto lands
+    on medium — the Lern-Loop is interactive tutoring, not a heavy one-shot job,
+    and a Max host is clamped there. An explicit pick (menu key `e`,
+    ``--set-effort``, ``LERNCLAUDE_EFFORT``) is passed through unclamped."""
+    picked = _current_effort()
+    if picked != "auto":
+        return picked
     from tier import tier_effort
-    return tier_effort(os.environ.get("LERNCLAUDE_EFFORT", "medium"))
+    return tier_effort("medium")
 
 
 def _build_argv(workspace: str) -> list:
@@ -1173,6 +1222,12 @@ def _menu_loop(stdscr, data: dict):
     medium = str(data.get("medium") or "xournalpp")
     if medium not in _MEDIA:
         medium = "xournalpp"
+    model = str(data.get("model") or "auto").lower()
+    if model not in _MODELS:
+        model = "auto"
+    effort = str(data.get("effort") or "auto").lower()
+    if effort not in _EFFORTS:
+        effort = "auto"
     while True:
         remaining = 10.0 - (time.monotonic() - start)
         stdscr.erase()
@@ -1184,11 +1239,16 @@ def _menu_loop(stdscr, data: dict):
             for j, (text, severity) in enumerate(exams):
                 _safe_addstr(stdscr, top + 1 + j, 0, text, C[severity])
             top += len(exams) + 2   # banner + its heading + one blank line
-        _safe_addstr(stdscr, top, 0, "  ✎ Medium: ", C["title"])
-        _safe_addstr(stdscr, top, 12, _MEDIUM_LABELS[medium], C["tutor"])
-        _safe_addstr(stdscr, top, 12 + len(_MEDIUM_LABELS[medium]),
-                     "   (m = wechseln)", C["foot"])
-        top += 2
+        for label, value, key in (("Userspace", _MEDIUM_LABELS[medium], "m"),
+                                  ("Modell", _MODEL_LABELS[model], "o"),
+                                  ("Effort", _EFFORT_LABELS[effort], "e")):
+            head = f"  ✎ {label}: "
+            _safe_addstr(stdscr, top, 0, head, C["title"])
+            _safe_addstr(stdscr, top, len(head), value, C["tutor"])
+            _safe_addstr(stdscr, top, len(head) + len(value),
+                         f"   ({key} = wechseln)", C["foot"])
+            top += 1
+        top += 1
         for i, row in enumerate(rows):
             selected = (i == idx)
             is_add = (row == _ADD_SENTINEL)
@@ -1213,7 +1273,8 @@ def _menu_loop(stdscr, data: dict):
             _safe_addstr(stdscr, top + i, 0, line, attr)
         foot = top + len(rows) + 1
         _safe_addstr(stdscr, foot, 0,
-                     "↑/↓ bewegen · Enter starten · m = Medium · d = Standard · x = löschen · q = beenden",
+                     "↑/↓ bewegen · Enter starten · m = Userspace · o = Modell · e = Effort · "
+                     "d = Standard · x = löschen · q = beenden",
                      C["foot"])
         if autostart and not interacted:
             _safe_addstr(stdscr, foot + 1, 0,
@@ -1243,6 +1304,12 @@ def _menu_loop(stdscr, data: dict):
         elif ch == ord("m"):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
+        elif ch == ord("o"):
+            model = _MODELS[(_MODELS.index(model) + 1) % len(_MODELS)]
+            data["model"] = model  # persisted by the caller
+        elif ch == ord("e"):
+            effort = _EFFORTS[(_EFFORTS.index(effort) + 1) % len(_EFFORTS)]
+            data["effort"] = effort  # persisted by the caller
         elif ch == ord("d"):
             if rows[idx] != _ADD_SENTINEL:   # the mode rows are valid defaults too
                 default = rows[idx]
@@ -1369,6 +1436,14 @@ def main() -> int:
                         choices=list(_MEDIA),
                         help="set the working medium the sessions use (xournalpp | board); "
                              "also toggled in the menu with `m`")
+    parser.add_argument("--set-model", metavar="MODEL", dest="set_model", default=None,
+                        choices=list(_MODELS),
+                        help="set the model the sessions launch with (auto | opus | sonnet | fable); "
+                             "also switched in the menu with `o`")
+    parser.add_argument("--set-effort", metavar="EFFORT", dest="set_effort", default=None,
+                        choices=list(_EFFORTS),
+                        help="set the effort the sessions launch with (auto | low | medium | high); "
+                             "also switched in the menu with `e`")
     parser.add_argument("--set-default", metavar="PATH", dest="set_default", default=None,
                         help="set PATH as the menu's default (auto-selected after 10s); "
                              "the literals `tutor` / `quickie` make "
@@ -1396,7 +1471,8 @@ def main() -> int:
             print("* Quickie")
         for w in data["workspaces"]:
             print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w) + _overview_suffix(w))
-        print(f"Medium: {_MEDIUM_LABELS[_current_medium()]}")
+        print(f"Userspace: {_MEDIUM_LABELS[_current_medium()]}")
+        print(f"Modell: {_select_model()}   Effort: {_select_effort()}")
         return 0
     if args.tutor:
         data = _ensure_default(_load_registry())
@@ -1411,7 +1487,13 @@ def main() -> int:
             return 1
         return _launch_quickie(data, inline=False)
     if args.set_medium:
-        print("Medium:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
+        print("Userspace:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
+        return 0
+    if args.set_model:
+        print("Modell:", _MODEL_LABELS[_set_model(args.set_model)])
+        return 0
+    if args.set_effort:
+        print("Effort:", _EFFORT_LABELS[_set_effort(args.set_effort)])
         return 0
     if args.set_default:
         print("Default:", _set_default(args.set_default))
