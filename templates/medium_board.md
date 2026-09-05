@@ -6,8 +6,13 @@
    Gibt es keinen, `create_board` (Name ist beim Anlegen Pflicht) und ihn nach
    dem Kurs benennen. **Nie auf dem Board eines anderen Kurses bauen** — Boards
    heißen nach ihrem Fach, danach gehen.
-2. `select_board <id>` — ab da wirken alle Tools auf diesem Board, auch über
-   Turns hinweg. (Frühere Sessions hielten `select_board` für nicht vorhanden
+2. `select_board <id>` — ab da wirken alle Tools auf diesem Board. Die Auswahl
+   gilt allerdings **kontoweit und nicht pro Session**: eine parallel laufende
+   Lern-Session für einen anderen Kurs biegt sie um, und der nächste Schreibzugriff
+   landet auf dem falschen Board. Deshalb `select_board` **vor jedem schreibenden
+   Call** wiederholen (`create_tab`, `append_blocks`, `update_block`, `show_board`,
+   `clear_board`), solange die Auswahl kontoweit gilt und mehrere Lern-Sessions
+   parallel laufen. (Frühere Sessions hielten `select_board` für nicht vorhanden
    und bauten blind über Edit-Links; das ist überholt.)
 3. **Erst jetzt Firefox** — auf die konkrete Board-URL (das Feld `url` aus
    `list_boards` / `select_board`), nicht auf die Startseite. Die Startseite ist nur die Board-Liste; der User
