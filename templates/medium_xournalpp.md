@@ -15,10 +15,13 @@
 - **Neues Häppchen:** das PDF sofort selbst in Firefox öffnen, nicht nachfragen.
 - **Abgabe:** der User sagt Bescheid, wenn er fertig ist; gelesen wird das
   gespeicherte `.xopp` (bei Papier das Foto/der Scan).
-- **Review:** das neueste `.xopp` zu PNG exportieren, Fehlerstellen rot
-  einkreisen/nummerieren, Legende (rot = Fehler mit Korrektur, grün = neu
-  Gemeistertes) in den Freiraum darunter, als `haeppchen_NN_reviewt.png` in
-  `Personalisierte_Übungen/` speichern und **sofort in Firefox öffnen**.
+- **Review, Export:** das neueste `.xopp` zu PNG machen —
+  `xournalpp --create-img=<out.png> <datei.xopp>` (mehrseitig: eine Datei je Seite).
+- **Review, Annotieren:** Fehlerstellen rot einkreisen/nummerieren, Legende
+  (rot = Fehler mit Korrektur, grün = neu Gemeistertes) in den Freiraum darunter
+  — mit Python/Pillow (`PIL.ImageDraw`) oder `convert`. Als
+  `haeppchen_NN_reviewt.png` in `Personalisierte_Übungen/` speichern und
+  **sofort in Firefox öffnen**.
 - **Quiz-Häppchen:** per AskUserQuestion-Tool im Chat (1–4 Fragen pro Runde,
   je max. 4 Optionen).
 - **Papier-Variante auf Zuruf** („ich rechne auf Papier"): PDF gedruckt oder in
