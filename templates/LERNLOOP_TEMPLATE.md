@@ -64,9 +64,10 @@ diese Zeile. Bei Neubestätigung das Datum ersetzen.
   Zweite Pflichtzeile: `Übersicht: bestätigt YYYY-MM-DD` (siehe §Kursübersicht).
 - **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Nach JEDEM
   Review mitziehen: User-Zitat → warum falsch → was stattdessen. Dominante Muster oben halten.
-- **`Personalisierte_Übungen/`** — die Häppchen (`haeppchen_NN.tex` → `.pdf`),
-  eigenständige `.xopp`-Rechenblätter (nicht auf dem PDF!), `haeppchen_NN_reviewt.png`
-  (annotierte Reviews).
+- **`Personalisierte_Übungen/`** — die Häppchen (Aufgabenquelle, z.B.
+  `haeppchen_NN.tex` → `.pdf`), die Rechenblätter des Users und die Artefakte der
+  Reviews. Welche Form Rechenblatt und Review-Artefakt haben, bestimmt das
+  Arbeitsmedium (Systemprompt).
 
 **Schreibrechte.** Die Session schreibt `todo.md`, `fehlermuster.md`,
 `Personalisierte_Übungen/` und die situativen Dateien des nächsten Abschnitts. In
@@ -100,7 +101,7 @@ Mediums öffnen (wie im Systemprompt beschrieben, ohne nachzufragen) plus
 Referenz-/Mitnehm-Blätter und die zuletzt geänderte Übung.
 
 **2. Häppchen-Prinzip** — personalisierte Übungen als **kleine 5–10-min-Einzelaufgaben**,
-die durch die `themenkarte.md`-Themen **rotieren** — NICHT große Multi-Aufgaben-Blätter
+die durch die Themen der Themenkarte oben **rotieren** — NICHT große Multi-Aufgaben-Blätter
 (die wirken erschlagend und verhindern den Einstieg). Verbindliche Design-Regeln:
 - **Knapp:** EINE Aufgabe, max. ~2 Teilaufgaben, wenig Fließtext. Zwei Themen ⇒ zwei Häppchen.
 - **Lösungsfrei:** das Blatt trägt NUR Aufgabe + ggf. EINEN Hinweis — NIE die Lösung/
@@ -109,8 +110,8 @@ die durch die `themenkarte.md`-Themen **rotieren** — NICHT große Multi-Aufgab
   nur als fertige Merksätze aufs Cheatsheet, nicht als Übung.
 - **Konzeptlücken erst prüfen:** bei neuen Themen nicht Bekanntheit voraussetzen — 1–2-
   Satz-Konzeptintro, Notation ausschreiben (z.B. ⟨a,b⟩ = a₁b₁+a₂b₂).
-- **Ablauf:** eine Mini-Aufgabe → User löst digital mit Zwischenschritten → schickt Foto/
-  Scan → gezieltes Review → nächstes Häppchen (nächster Typ).
+- **Ablauf:** eine Mini-Aufgabe → User löst sie mit Zwischenschritten im aktiven Medium →
+  gibt ab (wie, steht im Systemprompt) → gezieltes Review → nächstes Häppchen (nächster Typ).
 - **Neues Häppchen sofort selbst öffnen**, nicht nachfragen — im aktiven Medium,
   wie im Systemprompt beschrieben.
 
