@@ -71,8 +71,8 @@ Kurs-CLAUDE.md und der Fortschrittsspiegel in einem. Reihenfolge der Blöcke:
 5. **Vereinbarung** — drin / nicht drin / offene Fragen. Darunter genau EIN
    `submit`-Knopf („Gelesen & einverstanden"); sonst **keine Eingabefelder** im Tab.
 
-Bestätigung: `wait_url` mit `kinds: ["click","submit"]` als Hintergrund-Shell auf
-den Klick warten; sagt der User es im Chat, gilt das genauso. Danach in `todo.md`
+Bestätigung: auf den Klick warten (§„Auf einen Klick warten"); sagt der User es
+im Chat, gilt das genauso. Danach in `todo.md`
 `Übersicht: bestätigt YYYY-MM-DD` eintragen und erst dann das erste Häppchen.
 
 Nachziehen bei einem Board, dessen Tab 0 bisher nur der Fortschrittsspiegel war:
@@ -84,11 +84,24 @@ Spiegel nicht verloren geht.
 
 - Bauen mit `create_tab(select: false)`, in der Übersicht eintragen, **dann erst**
   `select_tab` — den User nie mitten im Rechnen wegreißen.
-- Danach auf die Abgabe warten: `wait_url` holen und die zurückgegebene
-  `curl`-Zeile als **Hintergrund-Shell-Kommando** laufen lassen. Das kostet keine
-  Modellaufrufe und weckt die Session beim Klick.
-  **Immer `kinds: ["click","submit"]`** abonnieren — ein reines `["submit"]`
-  feuert nicht zuverlässig.
+- Danach auf die Abgabe warten, siehe §„Auf einen Klick warten".
+
+## Auf einen Klick warten (`wait_url`)
+
+Gilt für jeden Wait: Übersichts-Bestätigung, Häppchen-Abgabe, „Noch eins?".
+
+- `wait_url` holen und die zurückgegebene `curl`-Zeile als
+  **Hintergrund-Shell-Kommando** laufen lassen. Das kostet keine Modellaufrufe
+  und weckt die Session beim Klick. **Immer `kinds: ["click","submit"]`**
+  abonnieren — ein reines `["submit"]` feuert nicht zuverlässig.
+- **Wird der Wait beendet, ohne gefeuert zu haben**, ist das normal:
+  langlaufende Hintergrund-Shells werden vom Harness abgeräumt. Dann in dieser
+  Reihenfolge: einmal `read_board` — oft liegt die Abgabe längst vor; sonst den
+  Wait höchstens **zweimal** neu starten; danach dem User in einem Satz sagen,
+  dass er sich nach dem Abgeben kurz melden soll. Keine dritte Runde.
+- **Rückfallebene ohne Hintergrundprozess:** `await_event` wartet im
+  Modellkontext und kann deshalb nicht abgeräumt werden, kostet aber mehr. Nur
+  nehmen, wenn der Wait wiederholt stirbt — nicht als Standard.
 
 ## Review
 
@@ -128,8 +141,8 @@ Antwort.
   `submit`-Knopf („Noch eins?“). Kein Gegenstück zum Ablehnen — wer aufhören
   will, klickt einfach nicht oder sagt es im Chat; ein „für heute reicht's“-Knopf
   macht das Aufhören zur angebotenen Option und arbeitet gegen die Gewohnheit.
-- Danach mit `wait_url` (`kinds: ["click","submit"]`) als Hintergrund-Shell auf
-  den Klick warten. Kommt der Klick, folgt das nächste Häppchen als neuer Tab;
-  bleibt er aus oder sagt der User ab, ein Satz Abschied.
+- Danach auf den Klick warten (§„Auf einen Klick warten"). Kommt der Klick, folgt
+  das nächste Häppchen als neuer Tab; bleibt er aus oder sagt der User ab, ein
+  Satz Abschied.
 - Antwortet er stattdessen im Chat, gilt das genauso — den Knopf dann nicht
   wiederholen.
