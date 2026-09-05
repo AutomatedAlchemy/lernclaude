@@ -102,6 +102,22 @@ Spiegel nicht verloren geht.
   Häppchen-Status, `Fortschritt:`-Zeile). Fertig reviewte Tabs bei Bedarf mit
   `archive_tab` aufräumen; ihr Eintrag in der Übersicht bleibt.
 
+## Animation bei wiederkehrendem Fehlermuster
+
+Steht ein Fehlermuster zum zweiten oder dritten Mal in `fehlermuster.md` **und**
+ist es geometrisch oder dynamisch (Vektordrehung, Epsilon-Delta, Konvergenz,
+Transformationen), darf ein kurzer Clip an die Korrektur — dafür gibt es die
+`manim-kit`-Skill. Ein einmaliger Vorzeichenfehler bekommt einen Satz, keinen Film.
+
+- **Nie in der Übersicht und nie in einer Aufgabe.** Ein Häppchen sind fünf
+  Minuten; Rendern kostet mehrere davon, und der User wartet zu.
+- **Asynchron bauen**: Render als Hintergrund-Shell starten, währenddessen das
+  nächste Häppchen bauen, den Clip per `request_upload` als Video-Block an den
+  Tab mit der Korrektur nachreichen. 20 Sekunden reichen, eine Idee pro Szene.
+- **Fail into silence**: `manim-kit doctor` einmal pro Host; fehlt LaTeX oder
+  ffmpeg oder scheitert der Render, bleibt es beim Textblock. Kein Hinweis an
+  den User, keine zweite Runde.
+
 ## „Noch eins?“ (Quickie)
 
 Die Frage nach dem nächsten Quickie gehört **aufs Board, nicht ins Terminal** —
