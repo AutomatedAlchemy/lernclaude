@@ -122,8 +122,9 @@ Gilt für jeden Wait: Übersichts-Bestätigung, Häppchen-Abgabe, „Noch eins?"
   server-berechnetem Score. Trägt der Tab eine Zeichnung (`drawings > 0`), sie
   mit `get_canvas` holen — **nie über eine ungesehene Zeichnung raten**.
 - Die Korrektur als Block **am selben Tab** zeigen, nicht nur im Chat: Zitat →
-  warum falsch → was stattdessen. Ist der Score falsch, weil der Schlüssel
-  falsch war, das auf dem Board richtigstellen und dem User sagen.
+  warum falsch → was stattdessen, **je Fehler höchstens fünf Sätze**. Ist der
+  Score falsch, weil der Schlüssel falsch war, das auf dem Board richtigstellen
+  und dem User sagen.
 - Danach die Übersicht per `update_block` nachziehen (Themen-Level,
   Häppchen-Status, `Fortschritt:`-Zeile). Fertig reviewte Tabs bei Bedarf mit
   `archive_tab` aufräumen; ihr Eintrag in der Übersicht bleibt.
