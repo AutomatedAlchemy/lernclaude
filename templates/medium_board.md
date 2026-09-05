@@ -71,7 +71,7 @@ Kurs-CLAUDE.md und der Fortschrittsspiegel in einem. Reihenfolge der Blöcke:
    `Fortschritt: x/y Häppchen`. Dieser Block wird nach jedem Review per
    `update_block` nachgezogen.
 3. **Themen erklärt** — je Thema Idee, Prüfungsanforderung, Notation, Falle,
-   Material. Formeln in `markdown`-Blöcke.
+   Material, höchstens 6 Sätze. Formeln in `markdown`-Blöcke.
 4. **Materialien** — jede Datei mit Pfad und einem Halbsatz beschrieben. Das
    Board nimmt keine PDFs an (`request_upload` nur Bilder und Video); Fotos
    dürfen als `image`-Block rein, einzelne PDF-Seiten nur situativ im Häppchen,

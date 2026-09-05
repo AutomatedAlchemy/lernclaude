@@ -33,8 +33,9 @@ Beim Anlegen aus dem Material gebaut, vom User allein gelesen und bestätigt;
 nach jeder Änderung der Themenkarte nachgezogen und neu bestätigt. Ohne
 bestätigte Übersicht kein Häppchen.
 
-Inhalt, in dieser Reihenfolge — kein Vorwissen voraussetzen, nichts abkürzen,
-der User soll sie ohne Rückfrage lesen und verstehen können:
+Inhalt, in dieser Reihenfolge — kein Vorwissen voraussetzen, der User soll sie
+ohne Rückfrage lesen und verstehen können. Dabei knapp bleiben: je Thema
+höchstens 6 Sätze, je Material ein Halbsatz.
 
 1. **Prüfung** — die Eckdaten von oben, dazu Aufgabenformat (Rechnen, Ankreuzen,
    Herleiten, mündlich), Gewichtung und was „bestanden" konkret heißt.
