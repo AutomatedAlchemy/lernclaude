@@ -29,7 +29,7 @@ path, a pointer to the procedure.
 There is deliberately no built-in default workspace. `_resolve_workspace(None)`
 returns `None` on a fresh install, and the caller routes that to the menu.
 
-`test_no_workspace_is_hardcoded_anywhere` greps `main.py` for personal path
+`test_no_personal_paths_and_no_builtin_default` greps `main.py` for personal path
 fragments and fails if any reappear. That test earned its keep during extraction —
 it caught the onboarding prompt still naming the author's study folders after the
 constants had been cleaned up.
@@ -48,7 +48,7 @@ its own reasons. Two consequences the code must keep honouring:
   is a launcher; it must not refuse to open a course because a notes file moved.
 
 The path itself is configuration (`LERNCLAUDE_EXAMS`, or `exams_file` in the
-registry), never a constant — `test_no_workspace_is_hardcoded_anywhere` greps
+registry), never a constant — `test_no_personal_paths_and_no_builtin_default` greps
 `main.py` for personal path fragments and this feature is exactly the kind that
 would tempt one back in.
 
