@@ -89,13 +89,20 @@ Gilt für jeden Wait: Übersichts-Bestätigung, Häppchen-Abgabe, „Noch eins?"
 - Warten, wie der MCP es beschreibt (bevorzugt der Weg, der keine Modellaufrufe
   kostet). Nach dem Aufwachen sagt das Ereignis, ob der User geklickt oder
   geschrieben hat; entsprechend Board oder Chat lesen.
-- **Wird der Wait beendet, ohne gefeuert zu haben**, ist das normal:
-  langlaufende Hintergrund-Shells werden vom Harness abgeräumt. Dann in dieser
-  Reihenfolge: einmal das Board lesen — oft liegt die Abgabe längst vor; sonst den
-  Wait höchstens **zweimal** neu starten; danach dem User in einem Satz sagen,
-  dass er sich nach dem Abgeben kurz melden soll. Keine dritte Runde.
-- Stirbt der Hintergrund-Wait wiederholt, den Wait im Modellkontext nehmen, den
-  der MCP als Rückfallebene anbietet — nicht als Standard.
+- **Den Wait als Monitor führen, nicht als Hintergrund-Shell.** Claude Code
+  räumt Hintergrund-Shells ab, sobald der Kernel Speicherdruck meldet
+  („stopped because the system is running low on memory"), und das trifft auf
+  diesem Host auch bei mehreren freien GB zu. Monitore sind davon ausgenommen.
+  `persistent` setzen, damit auch das Zeitlimit des Monitors nicht dazwischen
+  kommt. Vom Stream nur die Ereigniszeile durchlassen und die Zeilen wegfiltern,
+  die bloß die Verbindung offen halten — kommt jede davon als Meldung an, stoppt
+  der Monitor wegen zu vieler Meldungen.
+- **Wird der Wait trotzdem beendet, ohne gefeuert zu haben**: einmal das Board
+  lesen — oft liegt die Abgabe längst vor; sonst den Wait höchstens **zweimal**
+  neu starten; danach dem User in einem Satz sagen, dass er sich nach dem Abgeben
+  kurz melden soll. Keine dritte Runde.
+- Stirbt der Wait wiederholt, den Wait im Modellkontext nehmen, den der MCP als
+  Rückfallebene anbietet — nicht als Standard.
 
 ## Review
 

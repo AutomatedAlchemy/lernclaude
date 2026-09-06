@@ -140,6 +140,14 @@ def _launch_env() -> dict:
     nvm_bin = _detect_nvm_node_bin()
     if nvm_bin and nvm_bin not in env.get("PATH", "").split(os.pathsep):
         env["PATH"] = nvm_bin + os.pathsep + env.get("PATH", "")
+    # Claude Code reaps backgrounded shells when the kernel reports memory
+    # pressure: Bun arms a PSI trigger on /proc/pressure/memory at
+    # "some 150000 2000000", and a host whose page cache has eaten the free
+    # pages crosses that with GBs still available. The shell it hits is the
+    # board loop's parked wait, which costs a few MB and holds the whole
+    # session. A Lern-Loop backgrounds a wait and the odd manim render —
+    # nothing here is worth reclaiming.
+    env["CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP"] = "1"
     return env
 
 
