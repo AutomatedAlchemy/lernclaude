@@ -70,6 +70,24 @@ def test_no_personal_paths_and_no_builtin_default():
     assert m._menu_rows([]) == [m._ADD_SENTINEL]
 
 
+def test_medium_board_carries_no_mcp_manual():
+    """The board template says what the loop wants on the board, never how the
+    MCP tools behave: the server sends that itself on every connection, and a
+    copy here can only be older. See CLAUDE.md § The medium switch."""
+    text = (HERE / "templates" / "medium_board.md").read_text(encoding="utf-8")
+    for manual in (
+        "kinds",                          # wake-kind lists (0.22.0 removed the parameter)
+        "curl",                           # how wait_url / request_upload are driven
+        "await_event",                    # the fallback tool's name and cost
+        "submissions_you_have_not_read",  # list_tabs field names
+        "Großbuchstaben",                 # label rendering (fixed in the web app)
+        "kontoweit",                      # select_board semantics, stated by the server
+        "nimmt keine PDFs",               # upload rules, stated by request_upload
+    ):
+        assert manual not in text, f"MCP usage leaked into medium_board.md: {manual}"
+    assert "Bedienung des Boards" in text
+
+
 def test_advertise_answers_before_heavy_imports(monkeypatch, capsys):
     """The installer polls --advertise with a 5s timeout; it is answered at
     import time, before argparse, and must be the installer's JSON shape."""
@@ -215,7 +233,7 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
     }
     for name, text in texts.items():
         assert "CLAUDE.md" in text and "Heute:" in text, name
-        assert "get_canvas" in text and ".xopp" not in text, name   # active medium only
+        assert "Bedienung des Boards" in text and ".xopp" not in text, name   # active medium only
         for forbidden in ("cheatsheet", "basics.pdf", "haeppchen_"):
             assert forbidden not in text, (name, forbidden)
         assert "Fortschritt: x/y Häppchen" in text, name    # the menu reads that line

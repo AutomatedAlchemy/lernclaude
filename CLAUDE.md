@@ -183,6 +183,18 @@ machinery; they point at "Systemprompt" (the last asserts of
 switching (next Häppchen in the new medium), and a course CLAUDE.md may pin a
 fixed medium, which then wins — the board-native language courses rely on that.
 
+**A medium file carries what the loop wants from the medium, never how the medium's
+tools work.** For the Tutor Board the MCP server sends its own instructions and
+tool descriptions on every connection, and those are maintained with the server.
+Any copy of them in `templates/medium_board.md` is older than the server by
+construction and wins over it in practice, because it sits in the system prompt
+as an order. That is how a `kinds:["click","submit"]` line from an August
+workaround made a session deaf to the board chat on 2026-09-05, and earlier a
+"`select_board` does not exist" note made sessions build blindly.
+`test_medium_board_carries_no_mcp_manual` pins the boundary: a server fact that
+seems missing is added to the server's descriptions (probable-infrastructure,
+`probable.work/services/tutor-board/server/mcp.ts`), not to the template.
+
 ## Tool-local state
 
 The registry lives at `data/registry.json`, anchored to `SCRIPT_DIR` — **not**
