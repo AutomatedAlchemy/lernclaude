@@ -104,9 +104,11 @@ die fehlenden Blöcke ergänzen und in die Reihenfolge oben bringen.
 Gilt für jeden Wait: Übersichts-Bestätigung, Häppchen-Abgabe, „Noch eins?".
 
 - `wait_url` holen und die zurückgegebene `curl`-Zeile als
-  **Hintergrund-Shell-Kommando** laufen lassen. Das kostet keine Modellaufrufe
-  und weckt die Session beim Klick. **Immer `kinds: ["click","submit"]`**
-  abonnieren — ein reines `["submit"]` feuert nicht zuverlässig.
+  **Hintergrund-Shell-Kommando** laufen lassen. Das kostet keine Modellaufrufe.
+  Ein Wait hört das ganze Board: jeder Knopfdruck auf jedem Tab weckt ihn, und
+  jede Chat-Nachricht des Users auch. Es gibt nichts einzuschränken.
+- Nach dem Aufwachen entscheidet `event.kind`: bei `chat` `read_chat` rufen,
+  sonst `read_board`.
 - **Wird der Wait beendet, ohne gefeuert zu haben**, ist das normal:
   langlaufende Hintergrund-Shells werden vom Harness abgeräumt. Dann in dieser
   Reihenfolge: einmal `read_board` — oft liegt die Abgabe längst vor; sonst den
