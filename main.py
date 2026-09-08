@@ -34,7 +34,7 @@ import sys
 
 # --advertise must answer before any heavy import (installer 5s timeout).
 PARENT_METADATA = {
-    "name": "Lern-Loop",
+    "name": "lernclaude",
     "capability": "agent",
     "domain": "study-prep",
     "category": "personal",
@@ -1266,8 +1266,8 @@ def _menu_loop(stdscr, data: dict):
     while True:
         remaining = 10.0 - (time.monotonic() - start)
         stdscr.erase()
-        _safe_addstr(stdscr, 0, 0, "╭─ Lern-Loop ", C["title"])
-        _safe_addstr(stdscr, 0, 13, "— Kurs wählen ─╮", C["title"])
+        _safe_addstr(stdscr, 0, 0, "╭─ lernclaude ", C["title"])
+        _safe_addstr(stdscr, 0, 14, "— Kurs wählen ─╮", C["title"])
         top = 2
         if exams:
             _safe_addstr(stdscr, top, 0, "  ⏳ Nächste Klausuren", C["title"])
@@ -1424,7 +1424,7 @@ def _do_install_remove(remove: bool, workspace: "str | None" = None,
         label = name or Path(ws).name
         slug = _slug(label)
         meta = ToolMetadata(
-            name=f"Lern-Loop: {label}",
+            name=f"lernclaude: {label}",
             desktop_file=f"lernclaude_{slug}.desktop",
             icon=PARENT_METADATA["icon"],
             desc=f"Lern-Loop im Workspace {ws}",

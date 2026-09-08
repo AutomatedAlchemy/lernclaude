@@ -179,7 +179,7 @@ prints the upcoming ones above the course list — soonest first, with the days
 left, coloured red inside three days and yellow inside ten:
 
 ```
-╭─ Lern-Loop — Kurs wählen ─╮
+╭─ lernclaude — Kurs wählen ─╮
 
   ⏳ Nächste Klausuren
       in 34 T  ·  Mi 16.09. 09:00   ·  Experimentalphysik II
