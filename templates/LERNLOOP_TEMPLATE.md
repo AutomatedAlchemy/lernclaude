@@ -58,10 +58,12 @@ diese Zeile. Bei Neubestätigung das Datum ersetzen.
 
 - **`CLAUDE.md`** (diese Datei) = *wie* + Eckdaten + Themenkarte. Zuerst lesen.
 - **`todo.md`** = *wo stehen wir* — Re-Entry-Punkt: Klausurdatum, Stand, aktive Dateien.
-  Enthält immer genau eine Zeile `Fortschritt: x/y Häppchen` — x = reviewte Häppchen,
-  y = aktuelle Schätzung, wie viele Häppchen es insgesamt bis zur Klausurbereitschaft
-  braucht. y ist eine lebende Schätzung (nach jedem Review neu bewerten, gern anhand
-  der Themenkarte). Das `lernen`-Startmenü liest genau diese Zeile als Kurs-Fortschritt.
+  Enthält die Zeile `Fortschritt: x/y Häppchen` am Zeilenanfang (`**…**` erlaubt) —
+  x = reviewte Häppchen, y = aktuelle Schätzung, wie viele Häppchen es insgesamt bis zur
+  Klausurbereitschaft braucht. y ist eine lebende Schätzung (nach jedem Review neu bewerten,
+  gern anhand der Themenkarte). Das `lernen`-Startmenü liest die **letzte** solche Zeile:
+  du kannst die eine Zeile oben pflegen oder pro Sitzung eine neue anhängen. Im Fließtext
+  erwähnte Zahlen gehören eingerückt, nie an den Zeilenanfang.
   Zweite Pflichtzeile: `Übersicht: bestätigt YYYY-MM-DD` (siehe §Kursübersicht).
 - **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Nach JEDEM
   Review mitziehen: User-Zitat → warum falsch → was stattdessen. Dominante Muster oben halten.

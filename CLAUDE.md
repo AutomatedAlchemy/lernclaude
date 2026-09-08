@@ -70,6 +70,16 @@ sync: the template (todo.md bullet + review step), the scaffolded `todo.md`
 skeleton, and `opening_message` (so pre-existing workspaces adopt it without
 manual edits).
 
+**The last matching line wins, and the match is anchored to a line start.** Two
+todo.md shapes grew in the wild and both are legal: one line kept up to date at
+the top, or a per-session log that appends a fresh one. Reading the first match
+showed a course's opening number for weeks (Ableitungen sat at `11/25` in the
+menu while its log said `23/28`). Anchoring keeps a prose mention inside an
+indented bullet — "Fortschritt bleibt 6/26", Experimentalphysik_II — from being
+read as the bookkeeping line. `test_course_progress_takes_the_last_line_and_
+ignores_prose` pins both halves. The Übersicht parsers stay first-match on
+purpose: confirmation is a latch, any occurrence means confirmed.
+
 ## Kursübersicht: presence in the launcher, content in the template, look in the medium
 
 Every course gets an overview before its first Häppchen — the contract between

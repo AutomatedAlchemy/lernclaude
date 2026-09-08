@@ -313,6 +313,23 @@ def test_course_progress_parses_or_stays_silent(tmp_path):
     assert m.course_progress(str(tmp_path / "missing")) is None
 
 
+def test_course_progress_takes_the_last_line_and_ignores_prose(tmp_path):
+    """Both todo.md shapes are legal: one maintained line, or a per-session log
+    that appends one. The last line wins — the first one is the course's opening
+    number. A prose mention inside a bullet is not a bookkeeping line."""
+    ws = tmp_path / "Kurs"; ws.mkdir()
+    todo = ws / "todo.md"
+    todo.write_text(
+        "# todo\n\n## Stand 2026-08-01\n**Fortschritt: 11/25 Häppchen**\n\n"
+        "## Stand 2026-09-07\n- Levels unverändert, Fortschritt bleibt 22/28.\n"
+        "**Fortschritt: 23/29 Häppchen**\n",
+        encoding="utf-8")
+    assert m.course_progress(str(ws)) == (23, 29)
+    # the indented prose line alone is no bookkeeping line at all
+    todo.write_text("# todo\n- kein Häppchen, Fortschritt bleibt 6/26.\n", encoding="utf-8")
+    assert m.course_progress(str(ws)) is None
+
+
 def test_dossier_extracts_facts_and_drops_missing_pieces(tmp_path):
     ws = tmp_path / "Physik"; ws.mkdir()
     (ws / "CLAUDE.md").write_text(

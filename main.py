@@ -308,7 +308,7 @@ _LOOP_BRIEF = (
     "Halte nach jedem Review in todo.md die Zeile „Fortschritt: x/y Häppchen“ aktuell — "
     "x = reviewte Häppchen, y = deine aktuelle Schätzung, wie viele Häppchen es insgesamt "
     "bis zur Klausurbereitschaft braucht (y darf sich mit jedem Review ändern). "
-    "Das Startmenü liest genau diese Zeile."
+    "Die Zeile steht am Zeilenanfang; das Startmenü liest die letzte davon."
 )
 
 
@@ -743,19 +743,29 @@ def _exam_banner_lines(limit: int = 5) -> list:
 #     Fortschritt: 7/24 Häppchen
 # in the workspace's todo.md. The launcher only parses and displays that line,
 # and, exam-banner style, fails into silence: no line, no file, garbage -> None.
-_PROGRESS_RE = re.compile(r"fortschritt[^\d\n]*(\d+)\s*/\s*(\d+)", re.IGNORECASE)
+#
+# Two shapes exist in the wild and both are legal: one line kept up to date at
+# the top of the file, or a session log that appends a fresh one per session.
+# The **last** matching line therefore wins — reading the first one showed a
+# course's opening number for weeks (Ableitungen, 11/25 while it stood at 23/29).
+# The match is anchored to the start of a line (bold markers allowed) so that a
+# prose mention inside a bullet — "Fortschritt bleibt 6/26" — is not mistaken
+# for the bookkeeping line.
+_PROGRESS_RE = re.compile(
+    r"^\**\s*fortschritt[^\d\n]*(\d+)\s*/\s*(\d+)", re.IGNORECASE | re.MULTILINE
+)
 
 
 def course_progress(workspace: str) -> "tuple[int, int] | None":
-    """(done, target) from the workspace todo.md's Fortschritt line, or None."""
+    """(done, target) from the workspace todo.md's last Fortschritt line, or None."""
     try:
         text = (Path(workspace) / "todo.md").read_text(encoding="utf-8")
     except OSError:
         return None
-    match = _PROGRESS_RE.search(text)
-    if not match:
+    matches = _PROGRESS_RE.findall(text)
+    if not matches:
         return None
-    done, target = int(match.group(1)), int(match.group(2))
+    done, target = int(matches[-1][0]), int(matches[-1][1])
     return (done, target) if target > 0 else None
 
 
