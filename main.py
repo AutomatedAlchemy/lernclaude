@@ -178,6 +178,121 @@ def _set_medium(medium: str) -> str:
 
 
 # ----------------------------------------------------------------------------
+# backend: one launcher-level switch (menu key `b`), selecting claude or fauclaude
+# ----------------------------------------------------------------------------
+_BACKENDS = ("claude", "fauclaude")
+_BACKEND_LABELS = {
+    "claude": "Claude Code",
+    "fauclaude": "fauclaude (FAU LLM Gateway)",
+}
+
+
+def _current_backend() -> str:
+    """Determine the active LLM backend launcher.
+
+    Returns the environment override if ``LERNCLAUDE_BACKEND`` is set,
+    otherwise reads the registry's ``backend`` key, falling back to ``claude``.
+
+    Returns:
+        The active backend identifier string (``"claude"`` or ``"fauclaude"``).
+    """
+    raw = (os.environ.get("LERNCLAUDE_BACKEND")
+           or _load_registry().get("backend") or "claude")
+    norm = str(raw).strip().lower()
+    return norm if norm in _BACKENDS else "claude"
+
+
+def _set_backend(backend: str) -> str:
+    """Persist the selected backend into the registry.
+
+    Args:
+        backend: The backend identifier string to configure.
+
+    Returns:
+        The normalized backend identifier string that was saved.
+    """
+    normalized = backend.strip().lower()
+    if normalized not in _BACKENDS:
+        normalized = "claude"
+    data = _load_registry()
+    data["backend"] = normalized
+    _save_registry(data)
+    return normalized
+
+
+def _resolve_fauclaude_cmd() -> list[str]:
+    """Resolve the command-line argument tokens required to launch fauclaude.
+
+    Looks up ``LERNCLAUDE_FAUCLAUDE_CMD`` or ``FAUCLAUDE_CMD`` first, then checks
+    if ``fauclaude`` exists on ``PATH``, then inspects standard repository
+    locations for ``fauclaude/main.py`` and associated Python environments.
+
+    Returns:
+        List of command argument strings used to spawn fauclaude.
+    """
+    custom_command = os.environ.get("LERNCLAUDE_FAUCLAUDE_CMD") or os.environ.get("FAUCLAUDE_CMD")
+    if custom_command:
+        import shlex
+        return shlex.split(custom_command)
+
+    path_executable = shutil.which("fauclaude")
+    if path_executable:
+        return [path_executable]
+
+    candidate_scripts: list[Path] = [
+        SCRIPT_DIR.parents[1] / "MatSci" / "NHR" / "fauclaude" / "main.py",
+        Path.home() / "Synced" / "repos" / "MatSci" / "NHR" / "fauclaude" / "main.py",
+    ]
+    resolved_script = next((candidate for candidate in candidate_scripts if candidate.is_file()), None)
+    if resolved_script is None:
+        return ["fauclaude"]
+
+    candidate_interpreters: list[Path] = []
+    if os.environ.get("CLAUDE_FAU_PYTHON"):
+        candidate_interpreters.append(Path(os.path.expanduser(os.environ["CLAUDE_FAU_PYTHON"])))
+    candidate_interpreters.extend([
+        SCRIPT_DIR.parents[1] / "prob_ubuntu_environment" / "Py3EnvShare" / "bin" / "python3",
+        Path.home() / "Synced" / "repos" / "prob_ubuntu_environment" / "Py3EnvShare" / "bin" / "python3",
+    ])
+    resolved_python = next((candidate for candidate in candidate_interpreters if candidate.is_file()), Path(sys.executable))
+    return [str(resolved_python), str(resolved_script)]
+
+
+def _backend_cmd() -> list[str]:
+    """Return the base command tokens for the active backend.
+
+    Returns:
+        List of strings constituting the base executable command.
+    """
+    backend = _current_backend()
+    if backend == "fauclaude":
+        return _resolve_fauclaude_cmd()
+    return ["claude"]
+
+
+def _backend_model_args() -> list[str]:
+    """Generate model and effort CLI argument flags for the active backend.
+
+    Returns:
+        List of argument flag strings.
+    """
+    backend = _current_backend()
+    if backend == "fauclaude":
+        model = _current_model()
+        effort = _current_effort()
+        args: list[str] = []
+        if model != "auto":
+            args.extend(["--model", model])
+        if effort != "auto":
+            args.extend(["--effort", effort])
+        return args
+    return [
+        "--model", _select_model(),
+        "--effort", _select_effort(),
+    ]
+
+
+# ----------------------------------------------------------------------------
 # model and effort: the same launcher-level switch shape as the medium
 # ----------------------------------------------------------------------------
 # `auto` keeps the tier policy in tier.py (opus on Max, sonnet on Pro, clamped
@@ -373,24 +488,39 @@ def _select_effort() -> str:
     return tier_effort("medium")
 
 
-def _build_argv(workspace: str) -> list:
+def _build_argv(workspace: str) -> list[str]:
+    """Assemble the command-line argument list to launch a course session.
+
+    Args:
+        workspace: Path to the course workspace directory.
+
+    Returns:
+        Complete command-line argument list for launching the session.
+    """
     return [
-        "claude",
-        "--model", _select_model(),
-        "--effort", _select_effort(),
+        *_backend_cmd(),
+        *_backend_model_args(),
         "--append-system-prompt", _assemble_prompt(workspace),
         opening_message(workspace),
     ]
 
 
-def _exec_or_konsole(inner: list, workdir: str, *, inline: bool) -> int:
-    """Run the assembled claude argv in `workdir`. inline=True replaces this
-    process (the menu's terminal is handed to claude); inline=False spawns a
-    fresh konsole window, falling back to inline when konsole is absent."""
+def _exec_or_konsole(inner: list[str], workdir: str, *, inline: bool) -> int:
+    """Run the assembled backend argv in `workdir`.
+
+    Args:
+        inner: The command-line argument list to execute.
+        workdir: The working directory path to execute within.
+        inline: Whether to replace the current process (True) or spawn a new konsole window (False).
+
+    Returns:
+        Process exit code integer.
+    """
     env = _launch_env()
+    executable = inner[0]
     if inline:
         os.chdir(workdir)
-        os.execvpe("claude", inner, env)  # replaces this process; never returns
+        os.execvpe(executable, inner, env)  # replaces this process; never returns
         # …except when a test stubs execvpe: then we must NOT fall through
         # into the konsole spawn below (it once opened three real windows).
         return 0
@@ -402,10 +532,10 @@ def _exec_or_konsole(inner: list, workdir: str, *, inline: bool) -> int:
         print(f"Launched Lern-Loop in a new konsole window ({workdir}).")
         return 0
     except FileNotFoundError:
-        # No konsole (headless/server) — exec claude inline in this terminal.
-        print("konsole not found — launching claude in this terminal.")
+        # No konsole (headless/server) — exec inline in this terminal.
+        print(f"konsole not found — launching {executable} in this terminal.")
         os.chdir(workdir)
-        os.execvpe("claude", inner, env)  # replaces this process; never returns
+        os.execvpe(executable, inner, env)  # replaces this process; never returns
 
 
 def launch(workspace: str, *, inline: bool = False) -> int:
@@ -483,7 +613,11 @@ def opening_message_onboard() -> str:
 
 
 def do_add() -> int:
-    """Launch an interactive onboarding claude session (inline: takes over the menu terminal)."""
+    """Launch an interactive onboarding session (inline: takes over the menu terminal).
+
+    Returns:
+        Process exit code integer.
+    """
     root = _material_root()
     workdir = root if os.path.isdir(root) else str(Path.home())
     today = datetime.now().strftime("%A %Y-%m-%d")
@@ -495,16 +629,18 @@ def do_add() -> int:
         f"---\n# Heute: {today}\n"
     )
     inner = [
-        "claude", "--model", _select_model(), "--effort", _select_effort(),
+        *_backend_cmd(),
+        *_backend_model_args(),
         "--append-system-prompt", sys_prompt,
         opening_message_onboard(),
     ]
     env = _launch_env()
     os.chdir(workdir)
+    executable = inner[0]
     try:
-        os.execvpe("claude", inner, env)  # replaces this process; never returns
+        os.execvpe(executable, inner, env)  # replaces this process; never returns
     except FileNotFoundError:
-        print("Error: `claude` not found on PATH — cannot start the onboarding session.")
+        print(f"Error: `{executable}` not found on PATH — cannot start the onboarding session.")
         return 1
 
 
@@ -993,13 +1129,12 @@ def _tutor_workdir(workspaces: list) -> str:
 
 
 def _launch_tutor_choice(data: dict, *, inline: bool) -> int:
-    """Launch the Tutors Choice session — one interactive claude, started just
+    """Launch the Tutors Choice session — one interactive session, started just
     like a course launch, that picks the course and then tutors it."""
     workspaces = data["workspaces"]
     inner = [
-        "claude",
-        "--model", _select_model(),
-        "--effort", _select_effort(),
+        *_backend_cmd(),
+        *_backend_model_args(),
         "--append-system-prompt", _assemble_tutor_prompt(),
         opening_message_tutor(workspaces),
     ]
@@ -1125,15 +1260,14 @@ def opening_message_quickie(workspaces: list, streak: int = 0, total: int = 0) -
 
 def _launch_quickie(data: dict, *, inline: bool) -> int:
     """Launch a Quickie session: count it for the streak, then start one
-    interactive claude — in the course itself when there is only one, at the
+    interactive session — in the course itself when there is only one, at the
     courses' common root otherwise."""
     workspaces = data["workspaces"]
     streak, total = _record_quickie(data)
     _save_registry(data)
     inner = [
-        "claude",
-        "--model", _select_model(),
-        "--effort", _select_effort(),
+        *_backend_cmd(),
+        *_backend_model_args(),
         "--append-system-prompt", _assemble_quickie_prompt(workspaces),
         opening_message_quickie(workspaces, streak, total),
     ]
@@ -1257,6 +1391,9 @@ def _menu_loop(stdscr, data: dict):
     medium = str(data.get("medium") or "xournalpp")
     if medium not in _MEDIA:
         medium = "xournalpp"
+    backend = str(data.get("backend") or "claude").lower()
+    if backend not in _BACKENDS:
+        backend = "claude"
     model = str(data.get("model") or "auto").lower()
     if model not in _MODELS:
         model = "auto"
@@ -1275,6 +1412,7 @@ def _menu_loop(stdscr, data: dict):
                 _safe_addstr(stdscr, top + 1 + j, 0, text, C[severity])
             top += len(exams) + 2   # banner + its heading + one blank line
         for label, value, key in (("Userspace", _MEDIUM_LABELS[medium], "m"),
+                                  ("Backend", _BACKEND_LABELS[backend], "b"),
                                   ("Modell", _MODEL_LABELS[model], "o"),
                                   ("Effort", _EFFORT_LABELS[effort], "e")):
             head = f"  ✎ {label}: "
@@ -1308,7 +1446,7 @@ def _menu_loop(stdscr, data: dict):
             _safe_addstr(stdscr, top + i, 0, line, attr)
         foot = top + len(rows) + 1
         _safe_addstr(stdscr, foot, 0,
-                     "↑/↓ bewegen · Enter starten · m = Userspace · o = Modell · e = Effort · "
+                     "↑/↓ bewegen · Enter starten · m = Userspace · b = Backend · o = Modell · e = Effort · "
                      "d = Standard · x = löschen · q = beenden",
                      C["foot"])
         if autostart and not interacted:
@@ -1339,6 +1477,9 @@ def _menu_loop(stdscr, data: dict):
         elif ch == ord("m"):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
+        elif ch == ord("b"):
+            backend = _BACKENDS[(_BACKENDS.index(backend) + 1) % len(_BACKENDS)]
+            data["backend"] = backend  # persisted by the caller
         elif ch == ord("o"):
             model = _MODELS[(_MODELS.index(model) + 1) % len(_MODELS)]
             data["model"] = model  # persisted by the caller
@@ -1410,10 +1551,10 @@ def _slug(text: str) -> str:
 def _do_install_remove(remove: bool, workspace: "str | None" = None,
                        name: "str | None" = None, alias: "str | None" = None) -> int:
     try:
-        from cli_tool_kit import ToolInstaller, ToolMetadata
+        from cli_tool_kit import ToolInstaller, ToolMetadata  # type: ignore
     except ImportError:
         try:
-            from _shared.tool_installer import ToolInstaller, ToolMetadata
+            from _shared.tool_installer import ToolInstaller, ToolMetadata  # type: ignore
         except ImportError:
             print("Error: cli_tool_kit / _shared.tool_installer not found.")
             return 1
@@ -1446,7 +1587,7 @@ def _do_install_remove(remove: bool, workspace: "str | None" = None,
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="lernen", description=PARENT_METADATA["desc"])
+    parser = argparse.ArgumentParser(prog="lernen", description=str(PARENT_METADATA["desc"]))
     parser.add_argument("workspace", nargs="?", default=None,
                         help="workspace folder (default: the registered default course)")
     parser.add_argument("--advertise", action="store_true", help="emit installer metadata JSON")
@@ -1471,6 +1612,10 @@ def main() -> int:
                         choices=list(_MEDIA),
                         help="set the working medium the sessions use (xournalpp | board); "
                              "also toggled in the menu with `m`")
+    parser.add_argument("--set-backend", metavar="BACKEND", dest="set_backend", default=None,
+                        choices=list(_BACKENDS),
+                        help="set the LLM backend the sessions launch with (claude | fauclaude); "
+                             "also switched in the menu with `b`")
     parser.add_argument("--set-model", metavar="MODEL", dest="set_model", default=None,
                         choices=list(_MODELS),
                         help="set the model the sessions launch with (auto | opus | sonnet | fable); "
@@ -1507,6 +1652,7 @@ def main() -> int:
         for w in data["workspaces"]:
             print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w) + _overview_suffix(w))
         print(f"Userspace: {_MEDIUM_LABELS[_current_medium()]}")
+        print(f"Backend: {_BACKEND_LABELS[_current_backend()]}")
         print(f"Modell: {_select_model()}   Effort: {_select_effort()}")
         return 0
     if args.tutor:
@@ -1523,6 +1669,9 @@ def main() -> int:
         return _launch_quickie(data, inline=False)
     if args.set_medium:
         print("Userspace:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
+        return 0
+    if args.set_backend:
+        print("Backend:", _BACKEND_LABELS[_set_backend(args.set_backend)])
         return 0
     if args.set_model:
         print("Modell:", _MODEL_LABELS[_set_model(args.set_model)])

@@ -242,12 +242,20 @@ than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
 `CLAUDE_TIER_OVERRIDE` forces a tier for tests.
 
 That policy is what the registry keys `model` and `effort` mean by `auto`, their
-default. They are two more launcher-level switches shaped exactly like the medium
-one (menu keys `o` / `e`, `--set-model` / `--set-effort`, env override on top),
-and `_select_model` / `_select_effort` are the only readers. An explicit pick
+default. They are launcher-level switches shaped exactly like the medium and
+backend switches (menu keys `m` / `b` / `o` / `e`, `--set-medium` / `--set-backend` /
+`--set-model` / `--set-effort`, env override on top),
+and `_select_model` / `_select_effort` are the model readers. An explicit pick
 bypasses `tier_effort` on purpose: choosing `high` in the menu on a Max host must
 give high, or the switch would be a lie. The menu label for the medium row reads
 "Userspace"; the registry key, the templates and the code all still say `medium`.
+
+The backend switch (`backend` in registry, menu key `b`, `LERNCLAUDE_BACKEND` env)
+supports `claude` (standard Claude Code) and `fauclaude` (NHR@FAU LLM Gateway).
+When configured as `fauclaude`, the launcher resolves `fauclaude` via `PATH`,
+`LERNCLAUDE_FAUCLAUDE_CMD`, or sibling repo paths (`MatSci/NHR/fauclaude/main.py`),
+and omits `--model` and `--effort` when set to `auto` so that `fauclaude`'s own
+configured gateway models and settings take effect.
 
 ## Commits: make them yourself, leave the push
 

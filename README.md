@@ -256,6 +256,8 @@ All optional — the tool works with none of them set.
 | `LERNCLAUDE_DEFAULT_WORKSPACE` | Override the registered default for one launch |
 | `LERNCLAUDE_ROOT` | Where guided onboarding starts searching (default: `$HOME`) |
 | `LERNCLAUDE_EXAMS` | Markdown file with your exam-date table (banner off when unset; registry key `exams_file` does the same) |
+| `LERNCLAUDE_BACKEND` | Override the active backend for one launch (`claude` \| `fauclaude`) |
+| `LERNCLAUDE_FAUCLAUDE_CMD` | Explicit command / arguments to launch fauclaude |
 | `LERNCLAUDE_MODEL` | Pin the model, skipping tier detection |
 | `LERNCLAUDE_EFFORT` | Pin the effort level (default: the menu pick, else `medium`) |
 | `LERNCLAUDE_MEDIUM` | Override the working medium for one launch (`xournalpp` \| `board`) |
@@ -269,11 +271,12 @@ deliberate — the loop is interactive tutoring, where latency is felt more than
 extra reasoning depth helps. Both the mapping and the effort band are two dicts at
 the top of `tier.py`; edit them if you disagree.
 
-That is the `auto` setting. The menu has two more switches next to the Userspace
-row — `o` cycles the model (auto | Opus | Sonnet | Fable), `e` the effort
-(auto | low | medium | high) — and an explicit pick is used as-is, without the
-tier clamp. Both persist in the registry; `--set-model` / `--set-effort` set them
-from a script, `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override one launch.
+That is the `auto` setting. The menu has switches next to the Userspace
+row — `b` cycles the backend (Claude Code | fauclaude), `o` cycles the model
+(auto | Opus | Sonnet | Fable), `e` the effort (auto | low | medium | high) —
+and an explicit pick is used as-is, without the tier clamp. All persist in the
+registry; `--set-backend` / `--set-model` / `--set-effort` set them from a
+script, `LERNCLAUDE_BACKEND` / `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override one launch.
 
 ### The registry
 

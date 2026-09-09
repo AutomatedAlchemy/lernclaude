@@ -41,6 +41,8 @@ def spawns(monkeypatch, tmp_path):
     monkeypatch.delenv("LERNCLAUDE_DEFAULT_WORKSPACE", raising=False)
     monkeypatch.delenv("LERNCLAUDE_MEDIUM", raising=False)
     monkeypatch.delenv("LERNCLAUDE_EXAMS", raising=False)
+    monkeypatch.delenv("LERNCLAUDE_BACKEND", raising=False)
+    monkeypatch.delenv("LERNCLAUDE_FAUCLAUDE_CMD", raising=False)
     monkeypatch.setenv("CLAUDE_TIER_OVERRIDE", "max")
     monkeypatch.setattr(m.os, "chdir", lambda d: rec.update(cwd=d))
     monkeypatch.setattr(m.os, "execvpe", lambda prog, argv, env: rec["exec"].append(argv))
@@ -143,6 +145,16 @@ def test_medium_choice_precedence(monkeypatch):
         assert (HERE / "templates" / f"medium_{medium}.md").is_file()
 
 
+def test_backend_choice_precedence(monkeypatch):
+    assert m._current_backend() == "claude"
+    m._set_backend("fauclaude")
+    assert m._current_backend() == "fauclaude"               # registry
+    monkeypatch.setenv("LERNCLAUDE_BACKEND", "claude")
+    assert m._current_backend() == "claude"                  # env wins
+    monkeypatch.setenv("LERNCLAUDE_BACKEND", "garbage")
+    assert m._current_backend() == "claude"                  # junk falls back
+
+
 def test_quickie_streak_arithmetic():
     data = {"workspaces": []}
     assert m._record_quickie(data, "2026-08-24") == (1, 1)
@@ -214,6 +226,31 @@ def test_launches_exec_one_interactive_session(tmp_path, monkeypatch, spawns):
     spawns["allow_popen"] = True
     m.launch(a)
     assert spawns["popen"][-1][:2] == ["konsole", "--workdir"] and "claude" in spawns["popen"][-1]
+
+
+def test_backend_fauclaude_launches(tmp_path, monkeypatch, spawns):
+    a, b = _courses(tmp_path, "A", "B")
+    monkeypatch.setenv("LERNCLAUDE_BACKEND", "fauclaude")
+    monkeypatch.setenv("LERNCLAUDE_FAUCLAUDE_CMD", "fauclaude-custom --opt")
+    argv = m._build_argv(a)
+    assert argv[:2] == ["fauclaude-custom", "--opt"]
+    # auto model and effort are omitted for fauclaude so default gateway settings apply
+    assert "--model" not in argv
+    assert "--effort" not in argv
+    assert "--append-system-prompt" in argv
+
+    # explicit model and effort are passed through
+    monkeypatch.setenv("LERNCLAUDE_MODEL", "gpt-oss-120b")
+    monkeypatch.setenv("LERNCLAUDE_EFFORT", "high")
+    argv_explicit = m._build_argv(a)
+    assert argv_explicit[argv_explicit.index("--model") + 1] == "gpt-oss-120b"
+    assert argv_explicit[argv_explicit.index("--effort") + 1] == "high"
+
+    # launch execution
+    spawns["exec"].clear()
+    m.launch(a, inline=True)
+    assert len(spawns["exec"]) == 1
+    assert spawns["exec"][0][:2] == ["fauclaude-custom", "--opt"]
 
 
 # ---- prompts: orient, never re-encode the procedure ----------------------
