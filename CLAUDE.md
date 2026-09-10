@@ -6,7 +6,7 @@ decisions and invariants an agent working on the code needs.
 Extracted from the author's `tools` monorepo (2026-08-10) into a standalone MIT
 repo, following the same path `bloggen` took. It has **no** dependency on
 `_shared` any more: the tier logic was vendored into `tier.py`, and the installer
-import falls back gracefully when `cli_tool_kit` is absent.
+import falls back gracefully when `cli_tools_kit` is absent.
 
 ## The SSoT boundary (the load-bearing invariant)
 

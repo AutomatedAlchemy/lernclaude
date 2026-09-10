@@ -64,7 +64,7 @@ To get a desktop icon and a `lernen` shell alias:
 python3 main.py --install
 ```
 
-This uses [`cli-tool-kit`](https://github.com/Probst1nator/cli-tool-kit) if it is
+This uses [`cli-tools-kit`](https://github.com/Probst1nator/cli-tools-kit) if it is
 installed; without it, `--install` reports what's missing and everything else
 keeps working. Run the tool by path if you skip the alias.
 
