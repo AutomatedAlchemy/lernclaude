@@ -280,20 +280,24 @@ than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
 `CLAUDE_TIER_OVERRIDE` forces a tier for tests.
 
 That policy is what the registry keys `model` and `effort` mean by `auto`, their
-default. They are launcher-level switches shaped exactly like the medium and
-backend switches (menu keys `m` / `b` / `o` / `e`, `--set-medium` / `--set-backend` /
-`--set-model` / `--set-effort`, env override on top),
+default. They are launcher-level switches shaped exactly like the medium
+switch (menu keys `m` / `o` / `e`, `--set-medium` / `--set-model` /
+`--set-effort`, env override on top),
 and `_select_model` / `_select_effort` are the model readers. An explicit pick
 bypasses `tier_effort` on purpose: choosing `high` in the menu on a Max host must
 give high, or the switch would be a lie. The menu label for the medium row reads
 "Userspace"; the registry key, the templates and the code all still say `medium`.
 
-The backend switch (`backend` in registry, menu key `b`, `LERNCLAUDE_BACKEND` env)
-supports `claude` (standard Claude Code) and `fauclaude` (NHR@FAU LLM Gateway).
-When configured as `fauclaude`, the launcher resolves `fauclaude` via `PATH`,
-`LERNCLAUDE_FAUCLAUDE_CMD`, or sibling repo paths (`MatSci/NHR/fauclaude/main.py`),
-and omits `--model` and `--effort` when set to `auto` so that `fauclaude`'s own
-configured gateway models and settings take effect.
+The backend follows the model, there is no separate switch (the `b` key and
+`--set-backend` were removed 2026-09-11). The `o` cycle lists the Anthropic
+models and then the models hosted on the NHR@FAU LLM Gateway (`faullm models`,
+with `_DEFAULT_FAU_MODELS` as the offline fallback). `_backend_for_model` maps
+an Anthropic name to `claude` and anything else to `fauclaude`;
+`LERNCLAUDE_BACKEND` still overrides that for one launch. For `fauclaude` the
+launcher resolves the command via `PATH`, `LERNCLAUDE_FAUCLAUDE_CMD`, or the
+sibling repo path (`MatSci/NHR/fauclaude/main.py`), passes the picked model
+through and omits `--effort` while it is `auto`, so the gateway's own settings
+apply.
 
 ## Commits: make them yourself, leave the push
 

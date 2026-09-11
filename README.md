@@ -77,7 +77,7 @@ lernen --menu                # force the menu
 lernen --list                # print registered courses (* marks the default)
 lernen --set-default <ws>    # change which course autostarts
 lernen --set-medium <m>      # set the working medium (Userspace): xournalpp | board
-lernen --set-model <m>       # set the model: auto | opus | sonnet | fable
+lernen --set-model <m>       # set the model: auto | opus | sonnet | fable | a FAU gateway model
 lernen --set-effort <e>      # set the effort: auto | low | medium | high
 lernen --tutor               # Tutors Choice: one session that picks the most urgent course and tutors it
 lernen --quickie             # Quickie: one short, winnable Häppchen (5 min); counts a daily streak
@@ -301,11 +301,14 @@ extra reasoning depth helps. Both the mapping and the effort band are two dicts 
 the top of `tier.py`; edit them if you disagree.
 
 That is the `auto` setting. The menu has switches next to the Userspace
-row — `b` cycles the backend (Claude Code | fauclaude), `o` cycles the model
-(auto | Opus | Sonnet | Fable), `e` the effort (auto | low | medium | high) —
-and an explicit pick is used as-is, without the tier clamp. All persist in the
-registry; `--set-backend` / `--set-model` / `--set-effort` set them from a
-script, `LERNCLAUDE_BACKEND` / `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override one launch.
+row — `o` cycles the model (auto | Opus | Sonnet | Fable, then the models
+hosted on the NHR@FAU LLM Gateway, shown as `fau: <name>`), `e` the effort
+(auto | low | medium | high) — and an explicit pick is used as-is, without the
+tier clamp. Picking a gateway model launches through `fauclaude` instead of
+`claude`; there is no separate backend switch. Both persist in the registry;
+`--set-model` / `--set-effort` set them from a script, `LERNCLAUDE_MODEL` /
+`LERNCLAUDE_EFFORT` override one launch, and `LERNCLAUDE_BACKEND` forces the
+launcher regardless of the model.
 
 ### The registry
 
