@@ -178,46 +178,131 @@ def _set_medium(medium: str) -> str:
 
 
 # ----------------------------------------------------------------------------
-# backend: one launcher-level switch (menu key `b`), selecting claude or fauclaude
+# backend and models: autoselected from the model choice (menu key `o`)
 # ----------------------------------------------------------------------------
 _BACKENDS = ("claude", "fauclaude")
-_BACKEND_LABELS = {
-    "claude": "Claude Code",
-    "fauclaude": "fauclaude (FAU LLM Gateway)",
+_ANTHROPIC_MODELS = ("auto", "opus", "sonnet", "fable")
+_ANTHROPIC_MODEL_LABELS = {
+    "auto": "automatisch (Tier)",
+    "opus": "Opus",
+    "sonnet": "Sonnet",
+    "fable": "Fable",
 }
+_DEFAULT_FAU_MODELS = (
+    "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "deepseek-ai/DeepSeek-V4-Flash",
+    "gpt-oss-120b",
+    "Qwen/Qwen3.6-35B-A3B-FP8",
+    "RedHatAI/Mistral-Small-3.2-24B-Instruct-2506-FP8",
+    "RedHatAI/gemma-4-31B-it-FP8-block",
+    "GaleneAI/Magistral-Small-2509-FP8-Dynamic",
+    "google/gemma-4-E4B-it",
+    "Microsoft/Phi-4-mini-instruct",
+    "ibm-granite/granite-4.1-3b",
+    "lightonai/LightOnOCR-2-1B",
+    "Qwen/Qwen3-Embedding-4B",
+    "intfloat/multilingual-e5-large",
+    "llamaindex/vdr-2b-multi-v1",
+)
+_EFFORTS = ("auto", "low", "medium", "high")
+_EFFORT_LABELS = {"auto": "automatisch (Tier)", "low": "low",
+                  "medium": "medium", "high": "high"}
+
+
+def _discover_fau_models() -> list[str]:
+    """Retrieve currently hosted FAU LLM gateway models with offline fallback.
+
+    Attempts to invoke the local ``faullm models`` entry point. If unavailable,
+    unresponsive, or offline, falls back gracefully to ``_DEFAULT_FAU_MODELS``.
+
+    Returns:
+        List of hosted model identifier strings.
+    """
+    faullm_script_candidates = [
+        SCRIPT_DIR.parents[1] / "MatSci" / "NHR" / "tools" / "faullm" / "main.py",
+        Path.home() / "Synced" / "repos" / "MatSci" / "NHR" / "tools" / "faullm" / "main.py",
+    ]
+    faullm_script = next((candidate for candidate in faullm_script_candidates if candidate.is_file()), None)
+    if not faullm_script:
+        return list(_DEFAULT_FAU_MODELS)
+
+    py_candidates = [
+        SCRIPT_DIR.parents[1] / "prob_ubuntu_environment" / "Py3EnvShare" / "bin" / "python3",
+        Path.home() / "Synced" / "repos" / "prob_ubuntu_environment" / "Py3EnvShare" / "bin" / "python3",
+    ]
+    py_executable = next((candidate for candidate in py_candidates if candidate.is_file()), Path(sys.executable))
+
+    try:
+        result = subprocess.run(
+            [str(py_executable), str(faullm_script), "models"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            models = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+            if models:
+                return models
+    except Exception:
+        pass
+    return list(_DEFAULT_FAU_MODELS)
+
+
+def _available_models() -> list[str]:
+    """Return all selectable models (Anthropic + FAU models).
+
+    Returns:
+        Ordered list of unique model identifier strings.
+    """
+    models: list[str] = list(_ANTHROPIC_MODELS)
+    fau_models = _discover_fau_models()
+    for model_identifier in fau_models:
+        if model_identifier not in models:
+            models.append(model_identifier)
+    current = _current_model()
+    if current and current not in models:
+        models.append(current)
+    return models
+
+
+def _model_label(model: str) -> str:
+    """Format a human-readable display label for a model identifier.
+
+    Args:
+        model: Model identifier string.
+
+    Returns:
+        Formatted display label.
+    """
+    if model in _ANTHROPIC_MODEL_LABELS:
+        return _ANTHROPIC_MODEL_LABELS[model]
+    clean_name = model.split("/")[-1] if "/" in model else model
+    return f"fau: {clean_name}"
+
+
+def _backend_for_model(model: str) -> str:
+    """Autoselect the backend launcher based on the chosen model.
+
+    Args:
+        model: The selected model identifier string.
+
+    Returns:
+        'claude' for native Anthropic models, 'fauclaude' for gateway models.
+    """
+    if model in _ANTHROPIC_MODELS:
+        return "claude"
+    return "fauclaude"
 
 
 def _current_backend() -> str:
-    """Determine the active LLM backend launcher.
-
-    Returns the environment override if ``LERNCLAUDE_BACKEND`` is set,
-    otherwise reads the registry's ``backend`` key, falling back to ``claude``.
+    """Determine the active LLM backend launcher, autoselected from the current model.
 
     Returns:
         The active backend identifier string (``"claude"`` or ``"fauclaude"``).
     """
-    raw = (os.environ.get("LERNCLAUDE_BACKEND")
-           or _load_registry().get("backend") or "claude")
-    norm = str(raw).strip().lower()
-    return norm if norm in _BACKENDS else "claude"
-
-
-def _set_backend(backend: str) -> str:
-    """Persist the selected backend into the registry.
-
-    Args:
-        backend: The backend identifier string to configure.
-
-    Returns:
-        The normalized backend identifier string that was saved.
-    """
-    normalized = backend.strip().lower()
-    if normalized not in _BACKENDS:
-        normalized = "claude"
-    data = _load_registry()
-    data["backend"] = normalized
-    _save_registry(data)
-    return normalized
+    if os.environ.get("LERNCLAUDE_BACKEND"):
+        raw_env = os.environ["LERNCLAUDE_BACKEND"].strip().lower()
+        if raw_env in _BACKENDS:
+            return raw_env
+    return _backend_for_model(_current_model())
 
 
 def _resolve_fauclaude_cmd() -> list[str]:
@@ -292,26 +377,12 @@ def _backend_model_args() -> list[str]:
     ]
 
 
-# ----------------------------------------------------------------------------
-# model and effort: the same launcher-level switch shape as the medium
-# ----------------------------------------------------------------------------
-# `auto` keeps the tier policy in tier.py (opus on Max, sonnet on Pro, clamped
-# to medium effort). Any other value is the user's explicit pick and is passed
-# through unclamped — picking `high` in the menu means high.
-_MODELS = ("auto", "opus", "sonnet", "fable")
-_MODEL_LABELS = {"auto": "automatisch (Tier)", "opus": "Opus",
-                 "sonnet": "Sonnet", "fable": "Fable"}
-_EFFORTS = ("auto", "low", "medium", "high")
-_EFFORT_LABELS = {"auto": "automatisch (Tier)", "low": "low",
-                  "medium": "medium", "high": "high"}
-
-
 def _current_model() -> str:
     """The picked model: env override wins, else registry, else auto."""
     if os.environ.get("LERNCLAUDE_MODEL"):
         return os.environ["LERNCLAUDE_MODEL"]
-    raw = str(_load_registry().get("model") or "auto").strip().lower()
-    return raw if raw in _MODELS else "auto"
+    raw = str(_load_registry().get("model") or "auto").strip()
+    return raw if raw else "auto"
 
 
 def _current_effort() -> str:
@@ -1391,12 +1462,7 @@ def _menu_loop(stdscr, data: dict):
     medium = str(data.get("medium") or "xournalpp")
     if medium not in _MEDIA:
         medium = "xournalpp"
-    backend = str(data.get("backend") or "claude").lower()
-    if backend not in _BACKENDS:
-        backend = "claude"
-    model = str(data.get("model") or "auto").lower()
-    if model not in _MODELS:
-        model = "auto"
+    model = str(data.get("model") or "auto")
     effort = str(data.get("effort") or "auto").lower()
     if effort not in _EFFORTS:
         effort = "auto"
@@ -1412,8 +1478,7 @@ def _menu_loop(stdscr, data: dict):
                 _safe_addstr(stdscr, top + 1 + j, 0, text, C[severity])
             top += len(exams) + 2   # banner + its heading + one blank line
         for label, value, key in (("Userspace", _MEDIUM_LABELS[medium], "m"),
-                                  ("Backend", _BACKEND_LABELS[backend], "b"),
-                                  ("Modell", _MODEL_LABELS[model], "o"),
+                                  ("Modell", _model_label(model), "o"),
                                   ("Effort", _EFFORT_LABELS[effort], "e")):
             head = f"  ✎ {label}: "
             _safe_addstr(stdscr, top, 0, head, C["title"])
@@ -1446,7 +1511,7 @@ def _menu_loop(stdscr, data: dict):
             _safe_addstr(stdscr, top + i, 0, line, attr)
         foot = top + len(rows) + 1
         _safe_addstr(stdscr, foot, 0,
-                     "↑/↓ bewegen · Enter starten · m = Userspace · b = Backend · o = Modell · e = Effort · "
+                     "↑/↓ bewegen · Enter starten · m = Userspace · o = Modell · e = Effort · "
                      "d = Standard · x = löschen · q = beenden",
                      C["foot"])
         if autostart and not interacted:
@@ -1477,11 +1542,10 @@ def _menu_loop(stdscr, data: dict):
         elif ch == ord("m"):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
-        elif ch == ord("b"):
-            backend = _BACKENDS[(_BACKENDS.index(backend) + 1) % len(_BACKENDS)]
-            data["backend"] = backend  # persisted by the caller
         elif ch == ord("o"):
-            model = _MODELS[(_MODELS.index(model) + 1) % len(_MODELS)]
+            models_list = _available_models()
+            curr_idx = models_list.index(model) if model in models_list else 0
+            model = models_list[(curr_idx + 1) % len(models_list)]
             data["model"] = model  # persisted by the caller
         elif ch == ord("e"):
             effort = _EFFORTS[(_EFFORTS.index(effort) + 1) % len(_EFFORTS)]
@@ -1542,7 +1606,7 @@ def run_menu() -> int:
 
 
 # ----------------------------------------------------------------------------
-# install / remove (shared cli_tool_kit installer)
+# install / remove (shared cli_tools_kit installer)
 # ----------------------------------------------------------------------------
 def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_") or "workspace"
@@ -1551,12 +1615,12 @@ def _slug(text: str) -> str:
 def _do_install_remove(remove: bool, workspace: "str | None" = None,
                        name: "str | None" = None, alias: "str | None" = None) -> int:
     try:
-        from cli_tool_kit import ToolInstaller, ToolMetadata  # type: ignore
+        from cli_tools_kit import ToolInstaller, ToolMetadata  # type: ignore
     except ImportError:
         try:
             from _shared.tool_installer import ToolInstaller, ToolMetadata  # type: ignore
         except ImportError:
-            print("Error: cli_tool_kit / _shared.tool_installer not found.")
+            print("Error: cli_tools_kit / _shared.tool_installer not found.")
             return 1
 
     if workspace:
@@ -1612,13 +1676,8 @@ def main() -> int:
                         choices=list(_MEDIA),
                         help="set the working medium the sessions use (xournalpp | board); "
                              "also toggled in the menu with `m`")
-    parser.add_argument("--set-backend", metavar="BACKEND", dest="set_backend", default=None,
-                        choices=list(_BACKENDS),
-                        help="set the LLM backend the sessions launch with (claude | fauclaude); "
-                             "also switched in the menu with `b`")
     parser.add_argument("--set-model", metavar="MODEL", dest="set_model", default=None,
-                        choices=list(_MODELS),
-                        help="set the model the sessions launch with (auto | opus | sonnet | fable); "
+                        help="set the model the sessions launch with (auto, opus, sonnet, fable, or any FAU model); "
                              "also switched in the menu with `o`")
     parser.add_argument("--set-effort", metavar="EFFORT", dest="set_effort", default=None,
                         choices=list(_EFFORTS),
@@ -1652,8 +1711,7 @@ def main() -> int:
         for w in data["workspaces"]:
             print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w) + _overview_suffix(w))
         print(f"Userspace: {_MEDIUM_LABELS[_current_medium()]}")
-        print(f"Backend: {_BACKEND_LABELS[_current_backend()]}")
-        print(f"Modell: {_select_model()}   Effort: {_select_effort()}")
+        print(f"Modell: {_model_label(_current_model())}   Effort: {_select_effort()}")
         return 0
     if args.tutor:
         data = _ensure_default(_load_registry())
@@ -1670,11 +1728,8 @@ def main() -> int:
     if args.set_medium:
         print("Userspace:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
         return 0
-    if args.set_backend:
-        print("Backend:", _BACKEND_LABELS[_set_backend(args.set_backend)])
-        return 0
     if args.set_model:
-        print("Modell:", _MODEL_LABELS[_set_model(args.set_model)])
+        print("Modell:", _model_label(_set_model(args.set_model)))
         return 0
     if args.set_effort:
         print("Effort:", _EFFORT_LABELS[_set_effort(args.set_effort)])

@@ -44,6 +44,7 @@ def spawns(monkeypatch, tmp_path):
     monkeypatch.delenv("LERNCLAUDE_BACKEND", raising=False)
     monkeypatch.delenv("LERNCLAUDE_FAUCLAUDE_CMD", raising=False)
     monkeypatch.setenv("CLAUDE_TIER_OVERRIDE", "max")
+    monkeypatch.setattr(m, "_discover_fau_models", lambda: list(m._DEFAULT_FAU_MODELS))
     monkeypatch.setattr(m.os, "chdir", lambda d: rec.update(cwd=d))
     monkeypatch.setattr(m.os, "execvpe", lambda prog, argv, env: rec["exec"].append(argv))
     monkeypatch.setattr(m.subprocess, "Popen", lambda cmd, **k: rec["popen"].append(cmd))
@@ -145,14 +146,22 @@ def test_medium_choice_precedence(monkeypatch):
         assert (HERE / "templates" / f"medium_{medium}.md").is_file()
 
 
-def test_backend_choice_precedence(monkeypatch):
+def test_backend_autoselection_from_model(monkeypatch):
+    assert m._current_backend() == "claude"                  # auto -> claude
+    m._set_model("opus")
     assert m._current_backend() == "claude"
-    m._set_backend("fauclaude")
-    assert m._current_backend() == "fauclaude"               # registry
-    monkeypatch.setenv("LERNCLAUDE_BACKEND", "claude")
-    assert m._current_backend() == "claude"                  # env wins
-    monkeypatch.setenv("LERNCLAUDE_BACKEND", "garbage")
-    assert m._current_backend() == "claude"                  # junk falls back
+    m._set_model("deepseek-ai/DeepSeek-V4-Flash-0731")
+    assert m._current_backend() == "fauclaude"               # FAU model -> fauclaude
+    m._set_model("gpt-oss-120b")
+    assert m._current_backend() == "fauclaude"
+    assert "fau: gpt-oss-120b" in m._model_label("gpt-oss-120b")
+    assert m._model_label("opus") == "Opus"
+    models = m._available_models()
+    assert "auto" in models and "opus" in models and "deepseek-ai/DeepSeek-V4-Flash-0731" in models
+    monkeypatch.setenv("LERNCLAUDE_MODEL", "sonnet")
+    assert m._current_backend() == "claude"
+    monkeypatch.setenv("LERNCLAUDE_BACKEND", "fauclaude")
+    assert m._current_backend() == "fauclaude"               # env override wins
 
 
 def test_quickie_streak_arithmetic():
@@ -230,12 +239,11 @@ def test_launches_exec_one_interactive_session(tmp_path, monkeypatch, spawns):
 
 def test_backend_fauclaude_launches(tmp_path, monkeypatch, spawns):
     a, b = _courses(tmp_path, "A", "B")
-    monkeypatch.setenv("LERNCLAUDE_BACKEND", "fauclaude")
+    monkeypatch.setenv("LERNCLAUDE_MODEL", "deepseek-ai/DeepSeek-V4-Flash-0731")
     monkeypatch.setenv("LERNCLAUDE_FAUCLAUDE_CMD", "fauclaude-custom --opt")
     argv = m._build_argv(a)
     assert argv[:2] == ["fauclaude-custom", "--opt"]
-    # auto model and effort are omitted for fauclaude so default gateway settings apply
-    assert "--model" not in argv
+    assert argv[argv.index("--model") + 1] == "deepseek-ai/DeepSeek-V4-Flash-0731"
     assert "--effort" not in argv
     assert "--append-system-prompt" in argv
 
