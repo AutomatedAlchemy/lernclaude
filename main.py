@@ -769,6 +769,8 @@ def _ensure_default(data: dict) -> dict:
     default = data.get("default")
     if default and default not in data["workspaces"] and default not in _SENTINELS:
         data["default"] = None
+    if default == _META_SENTINEL and _meta_selection(data) is None:
+        data["default"] = None   # the remembered combination lost a course
     if not data["default"] and data["workspaces"]:
         data["default"] = (_TUTOR_SENTINEL if len(data["workspaces"]) >= 2
                            else data["workspaces"][0])
@@ -800,6 +802,14 @@ def _set_default(path: str) -> str:
         data["default"] = _QUICKIE_SENTINEL
         _save_registry(data)
         return "Quickie"
+    if literal == "meta":
+        data = _load_registry()
+        if _meta_selection(data) is None:
+            return ("unverändert — noch keine Meta-Auswahl gemerkt (erst per Menü "
+                    "oder `--meta ZIEL QUELLE…` starten)")
+        data["default"] = _META_SENTINEL
+        _save_registry(data)
+        return "Meta-Häppchen"
     data = _load_registry()
     ap = _abs_path(path)
     if ap not in data["workspaces"]:
@@ -1345,6 +1355,126 @@ def _launch_quickie(data: dict, *, inline: bool) -> int:
     workdir = workspaces[0] if len(workspaces) == 1 else _tutor_workdir(workspaces)
     return _exec_or_konsole(inner, workdir, inline=inline)
 
+# ----------------------------------------------------------------------------
+# Meta-Häppchen: ONE Quickie-sized Häppchen in a TARGET course, written under
+# the lens of other courses (the SOURCES) — their fehlermuster.md and what they
+# practised last. The menu's multiselect (Space) picks target + sources; the
+# launcher remembers the last combination (registry `meta`) and shows it as a
+# row. The sources are read-only material for the session; only the target's
+# files change. A launch counts as a Quickie day: same size, same habit.
+# ----------------------------------------------------------------------------
+def _meta_selection(data: dict) -> "tuple[str, list[str]] | None":
+    """The remembered (target, sources) combination, or None when none was
+    ever set or a course in it is no longer registered."""
+    meta = data.get("meta") or {}
+    target = meta.get("target")
+    known = data.get("workspaces") or []
+    if not isinstance(target, str) or target not in known:
+        return None
+    sources = [s for s in (meta.get("sources") or [])
+               if isinstance(s, str) and s in known and s != target]
+    return (target, sources) if sources else None
+
+
+def _record_meta(data: dict, target: str, sources: list,
+                 today: "str | None" = None) -> "tuple[int, int, int]":
+    """Remember the combination and count the launch — as a Meta-Häppchen and,
+    being Quickie-sized, as a Quickie day too. Returns (quickie streak,
+    quickie total, meta total); the caller persists the registry."""
+    meta = data.setdefault("meta", {})
+    total = int(meta.get("total") or 0) + 1
+    meta.update(target=target, sources=list(sources), total=total)
+    streak, qtotal = _record_quickie(data, today)
+    return streak, qtotal, total
+
+
+def _meta_label(target: str, sources: list) -> str:
+    return (f"⇄ Meta-Häppchen — {' + '.join(Path(s).name for s in sources)}"
+            f" → {Path(target).name}")
+
+
+def _meta_suffix(data: dict) -> str:
+    total = int((data.get("meta") or {}).get("total") or 0)
+    return f"   · bisher {total}" if total else ""
+
+
+def _assemble_meta_prompt(target: str, sources: list) -> str:
+    """System prompt for a Meta-Häppchen: one short Häppchen in the target,
+    the target's own Lern-Loop mechanics scaled down, the sources read-only."""
+    return (
+        f"Du fährst ein Meta-Häppchen im Kurs-Ordner {target} — dessen CLAUDE.md "
+        "ist automatisch geladen. Ein Meta-Häppchen ist EIN kurzes Häppchen (ca. "
+        "5 Minuten) in diesem Ziel-Kurs, geschrieben mit Blick auf andere Kurse: "
+        "deren Fehlermuster und das, was dort zuletzt geübt wurde. Die "
+        "Quell-Ordner sind reines Lesematerial: " + ", ".join(sources) + ". "
+        "Geschrieben wird nur im Ziel-Ordner. Die Mechanik des Häppchens "
+        "(Lern-Set, Medium, Dateien, Review) steht in der CLAUDE.md des "
+        "Ziel-Kurses §'Lern-Loop' — folge ihr, dupliziere sie nicht, aber "
+        "skaliere sie auf ein Häppchen herunter.\n\n"
+        + _prompt_common()
+    )
+
+
+def opening_message_meta(target: str, sources: list, streak: int = 0,
+                         total: int = 0, meta_total: int = 0) -> str:
+    if meta_total <= 1:
+        count = "Das ist mein erstes Meta-Häppchen."
+    elif streak >= 2:
+        count = f"Das ist Meta-Häppchen Nr. {meta_total}, Quickie-Tag {streak} in Folge."
+    else:
+        count = f"Das ist Meta-Häppchen Nr. {meta_total}."
+    exams = f"Anstehende Klausuren:\n<klausuren>\n{_exam_prompt_lines()}\n</klausuren>\n"
+    dossiers = ("Ziel:\n" + _course_dossier(target) + "\n\nQuellen:\n"
+                + "\n\n".join(_course_dossier(ws) for ws in sources))
+    return (
+        f"Meta-Häppchen! Ein kurzes Häppchen im Ziel-Kurs, gebaut aus dem, was "
+        f"die Quell-Kurse gerade zeigen. {count} Begrüß mich in einem Satz, "
+        "dann direkt los.\n\n"
+        f"Ziel-Kurs: {target}\nQuell-Kurse:\n"
+        + "".join(f"- {ws}\n" for ws in sources) + "\n"
+        + exams + "\n"
+        f"Kurse:\n<dossiers>\n{dossiers}\n</dossiers>\n"
+        f"{_DATA_TAGS_NOTE}\n\n"
+        "Lies zuerst in jedem Quell-Kurs die fehlermuster.md ganz und von der "
+        "todo.md nur die letzten etwa zehn datierten Zeilen — nicht mehr, kein "
+        "Material der Quellen. Im Ziel-Kurs wie gewohnt todo.md, fehlermuster.md "
+        "und die Themenkarte.\n\n"
+        "Die Aufgabe: EINE kleine, in sich geschlossene Aufgabe im Stoff des "
+        "Ziel-Kurses, in ca. 5 Minuten lösbar und klar gewinnbar, die (a) ein "
+        "Fehlermuster aus den Quellen im Stoff des Ziels provoziert und/oder (b) "
+        "eine Fertigkeit anwendet, die in den Quellen zuletzt geübt wurde. Die "
+        "Mischung entscheidest du; sag mir in einem Halbsatz, welche Quelle das "
+        "Häppchen geprägt hat. Öffne es sofort im aktiven Medium, so wie es die "
+        "CLAUDE.md des Ziel-Kurses beschreibt. Kein Vorgeplänkel, keine "
+        "Theorie-Einleitung.\n\n"
+        "Nach der Abgabe: kurz und warm korrigieren, in einem Satz sagen, was "
+        "ich jetzt in der Hand habe, einen Fehler höchstens in zwei Sätzen "
+        "erklären. Dann frag „Noch eins?“ — so, wie es die Medium-Mechanik "
+        "beschreibt — mit derselben Ziel/Quellen-Wahl und dem nächsten "
+        "Meta-Häppchen schon im Kopf. Sag ich nein oder nichts mehr, "
+        "verabschiede dich in einem Satz — keine Predigt. Schreib nur im "
+        "Ziel-Ordner: halte dort in todo.md die Zeile „Fortschritt: x/y "
+        "Häppchen“ aktuell (ein Meta-Häppchen zählt als Häppchen) und notiere "
+        "es mit Datum, Thema und den Quell-Kursen in todo.md. Die Quell-Ordner "
+        "bleiben unangetastet — fällt dir dort etwas auf, sag es mir im Chat. "
+        "Eine fehlende Kursübersicht ist heute nicht dein Job. Alle "
+        "Dateiarbeit mit absoluten Pfaden."
+    )
+
+
+def _launch_meta(data: dict, target: str, sources: list, *, inline: bool) -> int:
+    """Launch a Meta-Häppchen session: remember + count the combination, then
+    one interactive session inside the target (its CLAUDE.md auto-loads)."""
+    streak, qtotal, total = _record_meta(data, target, sources)
+    _save_registry(data)
+    inner = [
+        *_backend_cmd(),
+        *_backend_model_args(),
+        "--append-system-prompt", _assemble_meta_prompt(target, sources),
+        opening_message_meta(target, sources, streak, qtotal, total),
+    ]
+    return _exec_or_konsole(inner, target, inline=inline)
+
 
 # ----------------------------------------------------------------------------
 # startup menu (curses): pick a course, add one, set the default; 10s autostart
@@ -1352,7 +1482,8 @@ def _launch_quickie(data: dict, *, inline: bool) -> int:
 _ADD_SENTINEL = "__ADD__"
 _TUTOR_SENTINEL = "__TUTOR__"
 _QUICKIE_SENTINEL = "__QUICKIE__"
-_SENTINELS = (_ADD_SENTINEL, _TUTOR_SENTINEL, _QUICKIE_SENTINEL)
+_META_SENTINEL = "__META__"
+_SENTINELS = (_ADD_SENTINEL, _TUTOR_SENTINEL, _QUICKIE_SENTINEL, _META_SENTINEL)
 
 
 def _needs_konsole_reexec() -> bool:
@@ -1378,7 +1509,7 @@ def _init_colors():
         return {"title": curses.A_BOLD, "cursor": 0, "star": 0,
                 "add": 0, "foot": 0, "count": curses.A_REVERSE | curses.A_BOLD, "path": 0,
                 "hot": curses.A_BOLD, "soon": curses.A_BOLD, "calm": 0,
-                "tutor": curses.A_BOLD, "quickie": curses.A_BOLD}
+                "tutor": curses.A_BOLD, "quickie": curses.A_BOLD, "meta": curses.A_BOLD}
     curses.start_color()
     try:
         curses.use_default_colors()
@@ -1411,6 +1542,8 @@ def _init_colors():
         "tutor": curses.color_pair(10) | curses.A_BOLD,
         # Bold yellow: warm and quick, visibly not the tutor's purple.
         "quickie": curses.color_pair(9) | curses.A_BOLD,
+        # Bold cyan like the title: the cross-course row, neither tutor nor quickie.
+        "meta": curses.color_pair(1) | curses.A_BOLD,
     }
 
 
@@ -1437,12 +1570,13 @@ def _confirm_delete(stdscr, C, path: str) -> bool:
             return False
 
 
-def _menu_rows(workspaces: list) -> list:
+def _menu_rows(workspaces: list, meta: bool = False) -> list:
     """Quickie on top (as soon as there is a course), then Tutors Choice (only
     once there is something to choose between), the courses, the add row."""
     quickie = [_QUICKIE_SENTINEL] if workspaces else []
     tutor = [_TUTOR_SENTINEL] if len(workspaces) >= 2 else []
-    return quickie + tutor + workspaces + [_ADD_SENTINEL]
+    meta_row = [_META_SENTINEL] if meta and len(workspaces) >= 2 else []
+    return quickie + tutor + meta_row + workspaces + [_ADD_SENTINEL]
 
 
 def _menu_loop(stdscr, data: dict):
@@ -1450,9 +1584,16 @@ def _menu_loop(stdscr, data: dict):
     curses.curs_set(0)
     stdscr.timeout(200)  # ms poll, so the 10s countdown can tick without a keypress
     C = _init_colors()
+    try:
+        curses.set_escdelay(25)   # Esc leaves the multiselect without the 1s wait
+    except Exception:
+        pass
     workspaces = list(data["workspaces"])
-    rows = _menu_rows(workspaces)
+    meta_sel = _meta_selection(data)
+    rows = _menu_rows(workspaces, meta=meta_sel is not None)
     default = data["default"]
+    multi = False        # the Meta multiselect: Space opens it
+    checked: list = []   # ordered — the first checked course is the target
     idx = rows.index(default) if default in rows else 0
     autostart = bool(default) and bool(workspaces)
     interacted = False
@@ -1470,7 +1611,8 @@ def _menu_loop(stdscr, data: dict):
         remaining = 10.0 - (time.monotonic() - start)
         stdscr.erase()
         _safe_addstr(stdscr, 0, 0, "╭─ lernclaude ", C["title"])
-        _safe_addstr(stdscr, 0, 14, "— Kurs wählen ─╮", C["title"])
+        _safe_addstr(stdscr, 0, 14, "— Meta-Häppchen: Ziel + Quellen wählen ─╮" if multi
+                     else "— Kurs wählen ─╮", C["title"])
         top = 2
         if exams:
             _safe_addstr(stdscr, top, 0, "  ⏳ Nächste Klausuren", C["title"])
@@ -1502,18 +1644,38 @@ def _menu_loop(stdscr, data: dict):
             elif is_tutor:
                 label = "Tutors Choice — der Tutor wählt den dringendsten Kurs"
                 base = C["tutor"]
+            elif row == _META_SENTINEL:
+                label = _meta_label(*meta_sel) + _meta_suffix(data)
+                base = C["meta"]
             else:
                 label = row + progress.get(row, "")
                 base = C["star"] if is_def else C["path"]
+            if multi:
+                # Checkbox column; the mode rows are greyed out — they are not selectable.
+                if row in _SENTINELS:
+                    base = C["foot"]
+                    box = "  "
+                elif checked and row == checked[0]:
+                    box = "◉ "
+                    base = C["meta"]
+                else:
+                    box = "☑ " if row in checked else "☐ "
+                label = box + label
             # Selection is shown by the ▶ arrow only — no background bar; just a bold nudge.
             attr = (base | curses.A_BOLD) if selected else base
-            line = marker + label + ("   ★ Standard" if is_def else "")
+            line = marker + label + ("   ★ Standard" if is_def and not multi else "")
             _safe_addstr(stdscr, top + i, 0, line, attr)
         foot = top + len(rows) + 1
-        _safe_addstr(stdscr, foot, 0,
-                     "↑/↓ bewegen · Enter starten · m = Userspace · o = Modell · e = Effort · "
-                     "d = Standard · x = löschen · q = beenden",
-                     C["foot"])
+        if multi:
+            _safe_addstr(stdscr, foot, 0,
+                         "↑/↓ bewegen · Leertaste = markieren (1. = Ziel) · z = Ziel · "
+                         "Enter = Meta-Häppchen · Esc = zurück",
+                         C["foot"])
+        else:
+            _safe_addstr(stdscr, foot, 0,
+                         "↑/↓ bewegen · Enter starten · Leertaste = Meta-Auswahl · m = Userspace · "
+                         "o = Modell · e = Effort · d = Standard · x = löschen · q = beenden",
+                         C["foot"])
         if autostart and not interacted:
             _safe_addstr(stdscr, foot + 1, 0,
                          f"  ⏱  Autostart Standard in {max(0, int(remaining) + 1)}s  —  beliebige Taste bricht ab  ",
@@ -1527,13 +1689,47 @@ def _menu_loop(stdscr, data: dict):
                 return ("tutor", None) if default in rows else ("launch", workspaces[0])
             if default == _QUICKIE_SENTINEL:
                 return ("quickie", None)
+            if default == _META_SENTINEL:
+                return ("meta", meta_sel) if meta_sel else ("tutor", None)
             return ("launch", default)
 
         ch = stdscr.getch()
         if ch == -1:
             continue
         interacted = True  # any key cancels the autostart countdown
-        if ch in (curses.KEY_UP, ord("k")):
+        if multi:
+            # The multiselect owns the keys: navigate, toggle, pick the target,
+            # launch, or leave. Nothing else (d, x, the switches) applies here.
+            row = rows[idx]
+            if ch in (curses.KEY_UP, ord("k")):
+                idx = (idx - 1) % len(rows)
+            elif ch in (curses.KEY_DOWN, ord("j")):
+                idx = (idx + 1) % len(rows)
+            elif ch == ord(" ") and row not in _SENTINELS:
+                if row in checked:
+                    checked.remove(row)     # unchecking the target promotes the next
+                else:
+                    checked.append(row)
+            elif ch == ord("z") and row not in _SENTINELS:
+                if row in checked:
+                    checked.remove(row)
+                checked.insert(0, row)
+            elif ch in (curses.KEY_ENTER, 10, 13):
+                if len(checked) >= 2:
+                    return ("meta", (checked[0], checked[1:]))
+                multi = False
+            elif ch in (27, ord("q")):
+                multi = False
+            continue
+        if ch == ord(" "):
+            # Open the multiselect, pre-checked with the remembered combination;
+            # without one, the course under the cursor becomes the target.
+            multi = True
+            if meta_sel:
+                checked = [meta_sel[0], *meta_sel[1]]
+            else:
+                checked = [rows[idx]] if rows[idx] not in _SENTINELS else []
+        elif ch in (curses.KEY_UP, ord("k")):
             idx = (idx - 1) % len(rows)
         elif ch in (curses.KEY_DOWN, ord("j")):
             idx = (idx + 1) % len(rows)
@@ -1561,7 +1757,8 @@ def _menu_loop(stdscr, data: dict):
                     data["default"] = None
                 _ensure_default(data)   # recompute: tutor / sole course / None
                 workspaces = list(data["workspaces"])
-                rows = _menu_rows(workspaces)
+                meta_sel = _meta_selection(data)   # a source or the target may be gone
+                rows = _menu_rows(workspaces, meta=meta_sel is not None)
                 default = data["default"]
                 idx = min(idx, len(rows) - 1)  # keep the cursor in range
         elif ch in (curses.KEY_ENTER, 10, 13):
@@ -1571,6 +1768,8 @@ def _menu_loop(stdscr, data: dict):
                 return ("tutor", None)
             if rows[idx] == _QUICKIE_SENTINEL:
                 return ("quickie", None)
+            if rows[idx] == _META_SENTINEL:
+                return ("meta", meta_sel)
             return ("launch", rows[idx])
 
 
@@ -1600,6 +1799,8 @@ def run_menu() -> int:
         return _launch_tutor_choice(data, inline=True)
     if action == "quickie":
         return _launch_quickie(data, inline=True)
+    if action == "meta" and ws:
+        return _launch_meta(data, ws[0], ws[1], inline=True)
     if action == "add":
         return do_add()  # interactive: claude helps decide the location, then --register's it
     return 0
@@ -1668,6 +1869,11 @@ def main() -> int:
     parser.add_argument("--quickie", action="store_true",
                         help="Quickie: one short, winnable Häppchen (5 min); "
                              "counts towards the streak shown in the menu")
+    parser.add_argument("--meta", nargs="*", metavar="PFAD", default=None,
+                        help="Meta-Häppchen: one short Häppchen in the TARGET course, shaped by "
+                             "the SOURCE courses' mistakes and recent practice — "
+                             "`--meta ZIEL QUELLE [QUELLE…]`, or bare `--meta` for the "
+                             "combination remembered from the last time")
     parser.add_argument("--register", metavar="PATH", default=None,
                         help="scaffold + register PATH as a course (no launch; used by the onboarding session)")
     parser.add_argument("--unregister", metavar="PATH", default=None,
@@ -1685,8 +1891,8 @@ def main() -> int:
                              "also switched in the menu with `e`")
     parser.add_argument("--set-default", metavar="PATH", dest="set_default", default=None,
                         help="set PATH as the menu's default (auto-selected after 10s); "
-                             "the literals `tutor` / `quickie` make "
-                             "Tutors Choice / the Quickie the default")
+                             "the literals `tutor` / `quickie` / `meta` make "
+                             "Tutors Choice / the Quickie / the remembered Meta-Häppchen the default")
     parser.add_argument("--print-prompt", dest="print_prompt", action="store_true",
                         help="print the assembled system prompt and exit (no launch)")
     parser.add_argument("--dry-run", dest="dry_run", action="store_true",
@@ -1708,6 +1914,11 @@ def main() -> int:
             print("* Tutors Choice")
         if data["default"] == _QUICKIE_SENTINEL:
             print("* Quickie")
+        if data["default"] == _META_SENTINEL:
+            print("* Meta-Häppchen")
+        sel = _meta_selection(data)
+        if sel:
+            print("Meta: " + " + ".join(sel[1]) + " → " + sel[0] + _meta_suffix(data).strip())
         for w in data["workspaces"]:
             print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w) + _overview_suffix(w))
         print(f"Userspace: {_MEDIUM_LABELS[_current_medium()]}")
@@ -1725,6 +1936,28 @@ def main() -> int:
             print("Noch kein Kurs registriert — run `lernen` for the menu.")
             return 1
         return _launch_quickie(data, inline=False)
+    if args.meta is not None:
+        data = _ensure_default(_load_registry())
+        if args.meta:
+            if len(args.meta) < 2:
+                print("--meta braucht ZIEL und mindestens eine QUELLE — oder gar keinen "
+                      "Pfad für die gemerkte Auswahl.")
+                return 1
+            target, *sources = (_abs_path(p) for p in args.meta)
+            for p in (target, *sources):
+                if p not in data["workspaces"]:
+                    data["workspaces"].append(p)   # like --set-default: naming it registers it
+        else:
+            sel = _meta_selection(data)
+            if sel is None:
+                print("Noch keine Meta-Auswahl gemerkt — `lernen --meta ZIEL QUELLE…`, "
+                      "oder im Menü mit der Leertaste wählen.")
+                return 1
+            target, sources = sel
+        if args.print_prompt:
+            print(_assemble_meta_prompt(target, sources))
+            return 0
+        return _launch_meta(data, target, sources, inline=False)
     if args.set_medium:
         print("Userspace:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
         return 0

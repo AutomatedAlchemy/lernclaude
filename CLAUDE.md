@@ -177,6 +177,44 @@ opening's counter line are the only consumers. The sentinel is a valid
 `default` (`d`, `--set-default quickie`) and, like the tutor sentinel, never
 leaks out of `_default_workspace` — `_SENTINELS` is the single list to check.
 
+## Meta-Häppchen: one target, read-only sources, the mix stays with the model
+
+`_launch_meta` is the third brief on the Quickie machinery: one session, tier
+model, `_exec_or_konsole`, started INSIDE the target workspace so its CLAUDE.md
+auto-loads (unlike the tutor, which starts at the common root — here the
+course is known at launch time). The opening (`opening_message_meta`) carries
+the target dossier and the source dossiers in `<dossiers>`, the exam lines,
+and the brief: read each source's fehlermuster.md fully and the last ~10 dated
+todo.md lines, then write ONE Quickie-sized Häppchen in the target's material
+that provokes the sources' error patterns and/or reuses what they practised.
+Whether mistakes or progress dominate is a tutoring judgment and stays with
+the session (SSoT boundary). The sources are read-only by brief: the session
+writes only the target's todo.md (Fortschritt line + a dated note naming the
+sources); a pattern noticed in a source is said in the chat, not written
+there. No file lists, no procedure — `test_prompts_orient_without_reencoding_
+the_procedure` covers the meta texts like the others.
+
+State is one registry key, `meta: {target, sources, total}`, written by
+`_record_meta` at launch time (launcher state like the Quickie counter). A
+Meta-Häppchen is Quickie-sized, so `_record_meta` also calls `_record_quickie`
+— a Meta-only day keeps the streak alive. `_meta_selection` is the single
+reader: it returns the remembered combination only while the target and at
+least one source are still registered, dropping unregistered sources silently.
+Everything hangs off it — the menu row (`_META_SENTINEL`, in `_SENTINELS`, so
+`_default_workspace` never leaks it), the `d`/`--set-default meta` default
+(`_ensure_default` resets a meta default whose selection is gone),
+`--list`, and bare `--meta`. `--print-prompt --meta …` prints without
+recording, deliberately.
+
+The multiselect is menu state only (`multi`, `checked` in `_menu_loop`):
+Space opens it pre-checked with the remembered combination (or the cursor
+row as target when nothing is remembered), Space toggles, `z` makes the
+cursor row the target, Enter with ≥2 checked returns `("meta", (target,
+sources))`, Esc/`q`/Enter-with-fewer leaves it. Inside the mode the other
+keys (`d`, `x`, the switches) are ignored on purpose, and the sentinel rows
+are greyed out and unselectable. `curses.set_escdelay(25)` makes Esc
+immediate; it is wrapped in try because it is Python ≥ 3.9 only.
+
 ## The medium switch: choice in the launcher, mechanics in launcher templates
 
 The working medium (Xournal++ vs Tutor Board) is deliberately NOT part of the
@@ -305,7 +343,7 @@ the push, not the commit.
 | `tier.py` | vendored subscription-tier → model/effort mapping |
 | `templates/LERNLOOP_TEMPLATE.md` | the Lern-Loop procedure stamped into new workspaces |
 | `templates/medium_*.md` | per-medium mechanics, appended to the system prompt |
-| `test_lernclaude.py` | 13 offline tests — behaviour only, no network, no launch |
+| `test_lernclaude.py` | 18 offline tests — behaviour only, no network, no launch |
 | `requirements.txt` | empty by design; stdlib only |
 
 ## Gotchas
@@ -328,7 +366,7 @@ the push, not the commit.
 ## Tests
 
 ```bash
-python3 -m pytest -q     # 13 tests, offline
+python3 -m pytest -q     # 18 tests, offline
 python3 tier.py          # doctests + report this host's detected tier
 ```
 

@@ -81,6 +81,7 @@ lernen --set-model <m>       # set the model: auto | opus | sonnet | fable
 lernen --set-effort <e>      # set the effort: auto | low | medium | high
 lernen --tutor               # Tutors Choice: one session that picks the most urgent course and tutors it
 lernen --quickie             # Quickie: one short, winnable Häppchen (5 min); counts a daily streak
+lernen --meta [ZIEL QUELLE…] # Meta-Häppchen: one short Häppchen in ZIEL shaped by the QUELLE courses; bare = last combination
 lernen --add                 # guided onboarding: Claude helps you pick a folder
 lernen --register <ws>       # scaffold + register, no launch (used by onboarding)
 lernen --unregister <ws>     # drop from the menu (touches no files)
@@ -93,8 +94,8 @@ lernen --remove [ws]         # remove that icon + alias
 ### The menu
 
 A bare `lernen` opens a small curses picker of your registered courses.
-`↑`/`↓` move · `Enter` starts · `m` switches the medium · `d` sets the default ·
-`x` removes a course · `q` quits. Left untouched for ten seconds
+`↑`/`↓` move · `Enter` starts · `Space` opens the Meta multiselect · `m` switches
+the medium · `d` sets the default · `x` removes a course · `q` quits. Left untouched for ten seconds
 it autostarts your default; any keypress cancels the countdown.
 
 A fresh clone has nothing registered, so the menu shows only "add a course" —
@@ -156,6 +157,34 @@ alive (a Quickie today or yesterday), `· bisher 12` otherwise. The session gets
 the numbers to mention in its greeting. A launch counts as a Quickie; the
 launcher never judges whether you finished. `lernen --set-default quickie`
 (or `d` on the row) makes it the 10s autostart target.
+
+### Meta-Häppchen
+
+A Meta-Häppchen is one short Häppchen in a **target** course, written with the
+other selected **source** courses in view: the session reads each source's
+`fehlermuster.md` in full and the last ten or so dated lines of its `todo.md`,
+then builds a single winnable task in the target's own material that provokes
+the sources' error patterns or reuses what they just practised. Which of the
+two dominates is the session's call. It names in half a sentence which source
+shaped the task, reviews briefly, and asks „Noch eins?“ with the same
+selection. Only the target's files change (its `Fortschritt:` line and a dated
+`todo.md` note naming the sources); the sources are read-only. A launch counts
+as a Quickie day too, so the streak survives a Meta-only day.
+
+In the menu, `Space` on any row opens the multiselect. The first course you
+check is the target (`◉`), further checks are sources (`☑`), `z` moves the
+target to the cursor row, `Enter` launches with a target and at least one
+source, `Esc` goes back. The selection is remembered in the registry (`meta`:
+target, sources, total), and the multiselect opens pre-checked with it next
+time. Once something is remembered, a row `⇄ Meta-Häppchen — Mathe + Spanisch
+→ Physik` appears under Tutors Choice: `Enter` repeats the combination, `d`
+makes it the 10s autostart target (`lernen --set-default meta` does the same),
+and it disappears while one of its courses is unregistered.
+
+From a script: `lernen --meta ZIEL QUELLE [QUELLE…]` launches and remembers an
+explicit combination (unregistered paths get registered, like `--set-default`);
+bare `lernen --meta` reuses the remembered one; `lernen --print-prompt --meta …`
+shows the system prompt without launching or remembering.
 
 ### The medium switch
 
