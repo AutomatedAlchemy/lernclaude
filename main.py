@@ -45,6 +45,11 @@ PARENT_METADATA = {
     "args": [],
     "tags": ["CLI", "Icon"],
     "alias": "lernen",
+    # Autostart is the installer's to toggle (cli-tools-kit symlinks this tool's
+    # .desktop into ~/.config/autostart); `True` only pre-ticks its checkbox.
+    # The entry runs the icon's argument-less Exec, which is the menu — never a
+    # session directly, so the 10s countdown and its any-key cancel still apply.
+    "default_autostart": True,
     # Deliberately NO skill_name: lernen is an agent you talk to, not a skill.
 }
 

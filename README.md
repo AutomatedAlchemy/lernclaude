@@ -91,6 +91,20 @@ lernen --install [ws]        # desktop icon + alias (per-workspace when ws given
 lernen --remove [ws]         # remove that icon + alias
 ```
 
+### Starting on login
+
+The desktop icon installed by `--install` can also start on login: tick
+**Auto-Start** for lernclaude in the [`cli-tools-kit`](https://github.com/Probst1nator/cli-tools-kit)
+installer, which symlinks the icon into `~/.config/autostart`. lernclaude
+advertises `default_autostart`, so that box comes pre-ticked. There is no
+`lernen` flag for it — the installer owns autostart for every tool in this
+family, and it also clears the entry when you remove the tool.
+
+What starts is the **menu**, because the icon's command takes no arguments: it
+counts down ten seconds to your default (a course, the Quickie, Tutors Choice or
+a Meta-Häppchen) and any keypress cancels that. You never land in a session you
+cannot get out of.
+
 ### The menu
 
 A bare `lernen` opens a small curses picker of your registered courses.

@@ -243,6 +243,27 @@ workaround made a session deaf to the board chat on 2026-09-05, and earlier a
 seems missing is added to the server's descriptions (probable-infrastructure,
 `probable.work/services/tutor-board/server/mcp.ts`), not to the template.
 
+## Autostart belongs to the installer, not to this file
+
+Login autostart is cli-tools-kit's, and the whole implementation here is one
+`--advertise` field: `default_autostart: True`, which pre-ticks the installer's
+Auto-Start checkbox. Do not add a flag, a registry key or a `.desktop` writer
+for it — that was tried on 2026-09-14 and reverted the same day.
+
+The kit's contract for an `Icon` tool (`gui_installer.enable_autostart`) is a
+**symlink** at `~/.config/autostart/<desktop_file>` pointing at the installed
+`~/.local/share/applications/<desktop_file>`. One file, one name, and the
+installer's remove path calls `disable_autostart` for you. A hand-written second
+`.desktop` is a parallel mechanism the installer cannot see, toggle or clean up
+— the same wart the umbrella CLAUDE.md records for studon-client's `~/.bashrc`
+function, which is not a precedent to copy.
+
+Because the symlink runs the icon's argument-less `Exec`, login gets `main()` →
+`run_menu()`: the konsole re-exec for the missing TTY, the 10s countdown to the
+default, any key to cancel. That is the point — an autostart that dropped
+straight into a session would hand a fresh login a Claude process with no way
+out, so nothing here should ever point autostart at `--quickie` or a course.
+
 ## Tool-local state
 
 The registry lives at `data/registry.json`, anchored to `SCRIPT_DIR` — **not**
