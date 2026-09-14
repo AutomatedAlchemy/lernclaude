@@ -89,8 +89,6 @@ lernen --print-prompt <ws>   # show the assembled system prompt
 lernen --dry-run <ws>        # show the launch command
 lernen --install [ws]        # desktop icon + alias (per-workspace when ws given)
 lernen --remove [ws]         # remove that icon + alias
-lernen --enable-autostart    # open the course menu on login
-lernen --disable-autostart   # stop opening it on login
 ```
 
 ### The menu
@@ -187,21 +185,6 @@ From a script: `lernen --meta ZIEL QUELLE [QUELLE…]` launches and remembers an
 explicit combination (unregistered paths get registered, like `--set-default`);
 bare `lernen --meta` reuses the remembered one; `lernen --print-prompt --meta …`
 shows the system prompt without launching or remembering.
-
-### Autostart on login
-
-`lernen --enable-autostart` writes a small XDG autostart entry
-(`~/.config/autostart/lernclaude-menu.desktop`) that opens the course menu when
-you log in; `--disable-autostart` deletes it again, and `s` in the menu toggles
-it and shows the current state. What starts on login is the **menu**, so the
-usual rules apply: it counts down ten seconds to your default (a course, the
-Quickie, Tutors Choice or a Meta-Häppchen) and any keypress cancels that. You
-are never dropped into a session you cannot get out of.
-
-The entry hardcodes the interpreter and the path to `main.py`, so move or rename
-the checkout and you need to run `--enable-autostart` once more. The switch is
-per host: `~/.config/autostart` is not synced, while the registry is, so the
-menu row reports the file on the machine you are sitting at.
 
 ### The medium switch
 

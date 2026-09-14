@@ -28,8 +28,6 @@ Launch modes:
     lernen --dry-run [ws]        -> print the launch argv (no launch)
     lernen --install [ws]        -> desktop icon + alias (per-workspace when ws given, via --name/--alias)
     lernen --remove  [ws]        -> remove that icon + alias
-    lernen --enable-autostart    -> open the course menu on login (XDG autostart entry)
-    lernen --disable-autostart   -> stop doing that
 """
 import json
 import sys
@@ -57,7 +55,6 @@ if "--advertise" in sys.argv:
 import argparse
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import time
@@ -178,88 +175,6 @@ def _set_medium(medium: str) -> str:
     data["medium"] = medium
     _save_registry(data)
     return medium
-
-
-# ----------------------------------------------------------------------------
-# autostart on login: the choice is a launcher switch, the mechanism is a file
-# ----------------------------------------------------------------------------
-# Same split as the medium: the *choice* is the registry key `autostart` (menu
-# key `s`, `--enable-autostart` / `--disable-autostart`, `LERNCLAUDE_AUTOSTART`
-# to override one read), the *mechanism* is one XDG .desktop file in
-# ~/.config/autostart that runs `--menu`. Deliberately the menu and nothing
-# else: run_menu() already re-execs into konsole when there is no TTY, keeps
-# the 10s countdown to the registered default, and lets any keypress cancel it.
-# A login must never hand the terminal to a session with no way out.
-#
-# The registry is Syncthing-replicated but ~/.config/autostart is not, so the
-# key and the file can disagree across hosts. `autostart_state()` reports both
-# and the menu row shows the file, which is what actually runs on THIS host.
-_AUTOSTART_DESKTOP = "lernclaude-menu.desktop"
-
-
-def _autostart_desktop_path() -> Path:
-    """The XDG autostart entry for this host (honours XDG_CONFIG_HOME)."""
-    config_home = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(config_home).expanduser() / "autostart" / _AUTOSTART_DESKTOP
-
-
-def _autostart_installed() -> bool:
-    """Whether the login entry exists on this host — the fact that matters."""
-    return _autostart_desktop_path().is_file()
-
-
-def _autostart_wanted() -> bool:
-    """The recorded wish: env override, else registry, else off."""
-    raw = os.environ.get("LERNCLAUDE_AUTOSTART")
-    if raw is not None:
-        return raw.strip().lower() in ("1", "true", "yes", "on")
-    return bool(_load_registry().get("autostart"))
-
-
-def _autostart_desktop_text() -> str:
-    """The entry's contents, shaped like the sibling installers' login checks."""
-    exec_cmd = f"{shlex.quote(sys.executable)} {shlex.quote(str(Path(__file__).resolve()))} --menu"
-    return (
-        "[Desktop Entry]\n"
-        "Type=Application\n"
-        "Name=lernclaude — Lern-Loop menu\n"
-        "Comment=Open the course menu on login; it autostarts the default after 10s\n"
-        f"Exec={exec_cmd}\n"
-        f"Icon={PARENT_METADATA['icon']}\n"
-        "Terminal=false\n"
-        "X-KDE-autostart-after=panel\n"
-        "X-GNOME-Autostart-enabled=true\n"
-    )
-
-
-def _set_autostart(enabled: bool) -> str:
-    """Write or remove the login entry and record the wish. Returns a report.
-
-    The file is the mechanism and the registry key only the remembered wish, so
-    both move together — and a failure to write is reported, never swallowed:
-    this is the one switch whose effect the user cannot see until next boot.
-    """
-    data = _load_registry()
-    data["autostart"] = bool(enabled)
-    _save_registry(data)
-    path = _autostart_desktop_path()
-    try:
-        if enabled:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(_autostart_desktop_text(), encoding="utf-8")
-            return f"an — {path}"
-        if path.exists():
-            path.unlink()
-        return "aus"
-    except OSError as exc:
-        return f"Fehler beim Schreiben von {path}: {exc}"
-
-
-def autostart_state() -> str:
-    """One label for the menu row and `--list`: the file wins, the wish is noted."""
-    if _autostart_installed():
-        return "an (Menü beim Login)"
-    return "aus (gemerkt: an)" if _autostart_wanted() else "aus"
 
 
 # ----------------------------------------------------------------------------
@@ -1704,8 +1619,7 @@ def _menu_loop(stdscr, data: dict):
             for j, (text, severity) in enumerate(exams):
                 _safe_addstr(stdscr, top + 1 + j, 0, text, C[severity])
             top += len(exams) + 2   # banner + its heading + one blank line
-        for label, value, key in (("Autostart", autostart_state(), "s"),
-                                  ("Userspace", _MEDIUM_LABELS[medium], "m"),
+        for label, value, key in (("Userspace", _MEDIUM_LABELS[medium], "m"),
                                   ("Modell", _model_label(model), "o"),
                                   ("Effort", _EFFORT_LABELS[effort], "e")):
             head = f"  ✎ {label}: "
@@ -1759,8 +1673,8 @@ def _menu_loop(stdscr, data: dict):
                          C["foot"])
         else:
             _safe_addstr(stdscr, foot, 0,
-                         "↑/↓ bewegen · Enter starten · Leertaste = Meta-Auswahl · s = Autostart · "
-                         "m = Userspace · o = Modell · e = Effort · d = Standard · x = löschen · q = beenden",
+                         "↑/↓ bewegen · Enter starten · Leertaste = Meta-Auswahl · m = Userspace · "
+                         "o = Modell · e = Effort · d = Standard · x = löschen · q = beenden",
                          C["foot"])
         if autostart and not interacted:
             _safe_addstr(stdscr, foot + 1, 0,
@@ -1821,11 +1735,6 @@ def _menu_loop(stdscr, data: dict):
             idx = (idx + 1) % len(rows)
         elif ch == ord("q"):
             return ("quit", None)
-        elif ch == ord("s"):
-            # Writes the login entry right here, not via the caller: the file is
-            # the effect, and deferring it would leave the row lying on a crash.
-            _set_autostart(not _autostart_installed())
-            data["autostart"] = _autostart_installed()
         elif ch == ord("m"):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
@@ -1980,11 +1889,6 @@ def main() -> int:
                         choices=list(_EFFORTS),
                         help="set the effort the sessions launch with (auto | low | medium | high); "
                              "also switched in the menu with `e`")
-    parser.add_argument("--enable-autostart", dest="enable_autostart", action="store_true",
-                        help="open the course menu on login (writes an XDG autostart entry); "
-                             "also toggled in the menu with `s`")
-    parser.add_argument("--disable-autostart", dest="disable_autostart", action="store_true",
-                        help="stop opening the course menu on login (removes that entry)")
     parser.add_argument("--set-default", metavar="PATH", dest="set_default", default=None,
                         help="set PATH as the menu's default (auto-selected after 10s); "
                              "the literals `tutor` / `quickie` / `meta` make "
@@ -2019,7 +1923,6 @@ def main() -> int:
             print(("* " if w == data["default"] else "  ") + w + _progress_suffix(w) + _overview_suffix(w))
         print(f"Userspace: {_MEDIUM_LABELS[_current_medium()]}")
         print(f"Modell: {_model_label(_current_model())}   Effort: {_select_effort()}")
-        print(f"Autostart: {autostart_state()}")
         return 0
     if args.tutor:
         data = _ensure_default(_load_registry())
@@ -2063,9 +1966,6 @@ def main() -> int:
         return 0
     if args.set_effort:
         print("Effort:", _EFFORT_LABELS[_set_effort(args.set_effort)])
-        return 0
-    if args.enable_autostart or args.disable_autostart:
-        print("Autostart:", _set_autostart(bool(args.enable_autostart)))
         return 0
     if args.set_default:
         print("Default:", _set_default(args.set_default))
