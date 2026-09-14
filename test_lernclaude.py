@@ -481,3 +481,37 @@ def test_exam_table_parsing(tmp_path, monkeypatch):
     assert rows[2][1] == "Di 12.01. 08:00" and rows[2][0] > 100   # January = next year
     f.write_text("| Fach | Termin |\n|---|---|\n| X | garbage |\n", encoding="utf-8")
     assert m.upcoming_exams() == []                           # fail into silence
+
+
+def test_autostart_file_is_the_truth_and_the_registry_only_the_wish(tmp_path, monkeypatch):
+    """The login entry runs `--menu` (never a session), the file wins over the
+    remembered wish because ~/.config/autostart is not synced, and a toggle
+    leaves nothing behind."""
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.delenv("LERNCLAUDE_AUTOSTART", raising=False)
+    path = m._autostart_desktop_path()
+    assert path.parent.name == "autostart" and not m._autostart_installed()
+    assert m.autostart_state() == "aus"
+
+    assert str(path) in m._set_autostart(True)
+    assert m._autostart_installed() and m._load_registry().get("autostart") is True
+    body = path.read_text(encoding="utf-8")
+    assert "--menu" in body                      # the menu, never --quickie/--tutor
+    assert str(MAIN) in body and "Type=Application" in body
+    assert "an" in m.autostart_state()
+
+    m._set_autostart(False)                      # removes the file, keeps no crumbs
+    assert not path.exists() and m.autostart_state() == "aus"
+    assert m._load_registry().get("autostart") is False
+
+    # The synced registry may want it where this host has no file: the file wins.
+    reg = m._load_registry(); reg["autostart"] = True; m._save_registry(reg)
+    assert m._autostart_wanted() and not m._autostart_installed()
+    assert m.autostart_state() == "aus (gemerkt: an)"
+    monkeypatch.setenv("LERNCLAUDE_AUTOSTART", "0")
+    assert not m._autostart_wanted()             # env overrides the registry
+
+    for argv, installed in ((["--enable-autostart"], True), (["--disable-autostart"], False)):
+        monkeypatch.setattr(sys, "argv", ["lernen", *argv])
+        assert m.main() == 0
+        assert m._autostart_installed() is installed

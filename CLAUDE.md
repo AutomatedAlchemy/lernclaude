@@ -243,6 +243,34 @@ workaround made a session deaf to the board chat on 2026-09-05, and earlier a
 seems missing is added to the server's descriptions (probable-infrastructure,
 `probable.work/services/tutor-board/server/mcp.ts`), not to the template.
 
+## Autostart: the login entry starts the menu, never a session
+
+Same choice/mechanism split as the medium switch: the *choice* is the registry
+key `autostart` (menu key `s`, `--enable-autostart` / `--disable-autostart`,
+`LERNCLAUDE_AUTOSTART` for one read), the *mechanism* is one XDG `.desktop`
+file in `~/.config/autostart` whose `Exec` runs `--menu`.
+
+`--menu` and nothing else, deliberately. `run_menu()` already re-execs into
+konsole when there is no TTY (the desktop icon needs that too), keeps the 10s
+countdown to the registered default and lets any keypress cancel it. Pointing
+the entry at `--quickie` or a course would hand a fresh login a Claude session
+with no way out; the escape hatch is the feature.
+
+**The file is the truth, the registry key is only the remembered wish.** The
+registry is Syncthing-replicated and `~/.config/autostart` is not, so the two
+disagree across hosts by design — `_autostart_installed()` reads the file,
+`_autostart_wanted()` the key, and `autostart_state()` (menu row, `--list`)
+reports the file first because that is what actually runs here. The `s` handler
+writes the file immediately rather than deferring to the caller's
+`_save_registry`, so a crash cannot leave the row claiming an entry that was
+never written. `_set_autostart` returns its `OSError` as a string instead of
+raising: it is the one switch whose effect is invisible until the next login, so
+a failed write has to be said out loud.
+
+`Exec` holds the absolute interpreter and script path (`shlex.quote`d), which
+puts it under the same rule as the per-workspace icons — move the checkout and
+it must be rewritten.
+
 ## Tool-local state
 
 The registry lives at `data/registry.json`, anchored to `SCRIPT_DIR` — **not**
@@ -347,7 +375,7 @@ the push, not the commit.
 | `tier.py` | vendored subscription-tier → model/effort mapping |
 | `templates/LERNLOOP_TEMPLATE.md` | the Lern-Loop procedure stamped into new workspaces |
 | `templates/medium_*.md` | per-medium mechanics, appended to the system prompt |
-| `test_lernclaude.py` | 18 offline tests — behaviour only, no network, no launch |
+| `test_lernclaude.py` | 19 offline tests — behaviour only, no network, no launch |
 | `requirements.txt` | empty by design; stdlib only |
 
 ## Gotchas
@@ -370,7 +398,7 @@ the push, not the commit.
 ## Tests
 
 ```bash
-python3 -m pytest -q     # 18 tests, offline
+python3 -m pytest -q     # 19 tests, offline
 python3 tier.py          # doctests + report this host's detected tier
 ```
 
