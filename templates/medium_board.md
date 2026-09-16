@@ -78,6 +78,11 @@ die fehlenden Blöcke ergänzen und in die Reihenfolge oben bringen.
 
 ## Häppchen übergeben und einsammeln
 
+- **Ein Häppchen zur Zeit.** Das nächste wird erst gebaut, wenn das aktuelle
+  abgegeben und reviewt ist; Wartezeit wird nicht mit Vorbauen gefüllt. Liegt ein
+  Tab ungerechnet, wird er wieder vorgelegt (§Ankommen), nicht durch einen neuen
+  ersetzt. (EP2 2026: drei offene Tabs nebeneinander, eines davon drei Tage
+  ungerechnet; User: „räum die Tabs mal auf".)
 - Bauen mit `create_tab(select: false)`, in der Übersicht eintragen, **dann erst**
   `select_tab` — den User nie mitten im Rechnen wegreißen.
 - Danach auf die Abgabe warten, siehe §„Auf den User warten".
@@ -113,8 +118,9 @@ Gilt für jeden Wait: Übersichts-Bestätigung, Häppchen-Abgabe, „Noch eins?"
   Score falsch, weil der Schlüssel falsch war, das auf dem Board richtigstellen
   und dem User sagen.
 - Danach die Übersicht per `update_block` nachziehen (Themen-Level,
-  Häppchen-Status, `Fortschritt:`-Zeile). Fertig reviewte Tabs bei Bedarf
-  archivieren; ihr Eintrag in der Übersicht bleibt.
+  Häppchen-Status, `Fortschritt:`-Zeile). Fertig reviewte Tabs **bleiben auf der
+  Leiste**, samt Korrektur: der User will sie weiter sehen. Archivieren nur auf
+  ausdrückliche Bitte; der Eintrag in der Übersicht bleibt in jedem Fall.
 
 ## Animation bei wiederkehrendem Fehlermuster
 
