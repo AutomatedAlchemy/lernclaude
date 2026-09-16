@@ -213,8 +213,8 @@ _DEFAULT_FAU_MODELS = (
     "intfloat/multilingual-e5-large",
     "llamaindex/vdr-2b-multi-v1",
 )
-_EFFORTS = ("low", "medium", "high")
-_EFFORT_LABELS = {"low": "low", "medium": "medium", "high": "high"}
+_EFFORTS = ("low", "medium", "high", "xhigh", "max")
+_EFFORT_LABELS = {e: e for e in _EFFORTS}
 
 
 def _discover_fau_models() -> list[str]:
@@ -1875,7 +1875,7 @@ def main() -> int:
                              "also switched in the menu with `o`")
     parser.add_argument("--set-effort", metavar="EFFORT", dest="set_effort", default=None,
                         choices=list(_EFFORTS),
-                        help="set the effort the sessions launch with (low | medium | high); "
+                        help="set the effort the sessions launch with (low | medium | high | xhigh | max); "
                              "also switched in the menu with `e`")
     parser.add_argument("--set-default", metavar="PATH", dest="set_default", default=None,
                         help="set PATH as the menu's default (auto-selected after 10s); "
