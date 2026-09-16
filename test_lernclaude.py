@@ -441,6 +441,20 @@ def test_dossier_extracts_facts_and_drops_missing_pieces(tmp_path):
     assert m._themenkarte_size(str(ws)) == 2
     assert m._haeppchen_counts(str(ws)) == (2, 1)
     assert m._top_fehlermuster(str(ws)) == "Vorzeichen bei Feldrichtung vergessen"
+    # the ranked shape: the first body row of the Aktive-Muster table wins, header
+    # and separator rows are skipped, and the scaffolded empty table yields None
+    (ws / "fehlermuster.md").write_text(
+        "# Fehlermuster\n\n## Aktive Muster\n\n| # | Muster | Belege | Stand |\n|---|---|---|---|\n"
+        "| 6 | Präfix in die falsche Richtung | 9 | offen |\n| 1 | SI vor dem Einsetzen | 1 | repariert |\n\n"
+        "## Belege\n\n- irgendein alter Bullet\n", encoding="utf-8")
+    assert m._top_fehlermuster(str(ws)) == "Präfix in die falsche Richtung"
+    (ws / "fehlermuster.md").write_text(
+        "# Fehlermuster\n\n## Aktive Muster\n\n| # | Muster | Belege | Stand |\n|---|---|---|---|\n\n## Belege\n",
+        encoding="utf-8")
+    assert m._top_fehlermuster(str(ws)) is None
+    (ws / "fehlermuster.md").write_text(
+        "# Fehlermuster\n\n> Nach JEDEM Review …\n\n- Vorzeichen bei Feldrichtung vergessen\n",
+        encoding="utf-8")
     assert "H01 neu ausgeliefert" in m._todo_stand(str(ws))
     dossier = m._course_dossier(str(ws))
     for expected in ("2/26 Häppchen", "2 Themen", "2 Häppchen, 1 reviewt", "Vorzeichen", "H01"):

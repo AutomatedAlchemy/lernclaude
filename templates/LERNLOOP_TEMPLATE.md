@@ -92,8 +92,15 @@ diese Zeile. Bei Neubestätigung das Datum ersetzen.
   du kannst die eine Zeile oben pflegen oder pro Sitzung eine neue anhängen. Im Fließtext
   erwähnte Zahlen gehören eingerückt, nie an den Zeilenanfang.
   Zweite Pflichtzeile: `Übersicht: bestätigt YYYY-MM-DD` (siehe §Kursübersicht).
-- **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Nach JEDEM
-  Review mitziehen: User-Zitat → warum falsch → was stattdessen. Dominante Muster oben halten.
+- **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Zwei Teile:
+  oben die **Rangliste** `## Aktive Muster`, eine Tabelle `# | Muster | Belege | Stand`
+  (Belege als Zahl, Stand offen / repariert), nach jedem Review umsortiert, das
+  dominante Muster in Zeile 1 (das Startmenü liest genau diese Zeile). Darunter das
+  **Beleg-Log** `## Belege`, chronologisch angehängt: je Review User-Zitat → warum
+  falsch → was stattdessen, mit der Nummer des Musters. Ein Muster hat **eine**
+  Nummer; ein weiterer Beleg ist ein neuer Log-Eintrag unter derselben Nummer plus
+  ein Zähler in der Tabelle, keine Nummern 6b…6g. (EP2 2026: 37 KB reines Log, zwei
+  Muster „4", Muster 17 hinter 19; eine Rangliste gab es nie.)
 - **`Personalisierte_Übungen/`** — die Häppchen (Aufgabenquelle, z.B.
   `haeppchen_NN.tex` → `.pdf`), die Rechenblätter des Users und die Artefakte der
   Reviews. Welche Form Rechenblatt und Review-Artefakt haben, bestimmt das
@@ -176,8 +183,12 @@ eigenes Häppchen hier im Loop:
 **3. Review-Regel (verbindlich): Fehler SICHTBAR am Blatt des Users zeigen**, nicht nur
 loggen — wie, steht in der Medium-Mechanik im Systemprompt (annotiertes PNG bzw.
 Korrektur am Board-Tab). Zusätzlich im Chat explizit durchgehen (Zitat → warum falsch →
-was stattdessen). Erst danach das nächste Häppchen. Jedes Review auch in
-`fehlermuster.md` (+ ggf. situative Docs, falls angelegt), und die Zeile
+was stattdessen). Erst danach das nächste Häppchen. Fragt der User eine Diagnose
+nach, die Diagnose prüfen statt verteidigen: war sie falsch, am Blatt und in
+`fehlermuster.md` mit Datum richtigstellen (EP2 2026, Muster 17b: ein selbst
+hergeleiteter Faktor ½ war als Fehler gewertet worden). Jedes Review auch in
+`fehlermuster.md` (Rangliste umsortieren, Beleg anhängen; + ggf. situative Docs,
+falls angelegt), und die Zeile
 `Fortschritt: x/y Häppchen` in `todo.md` mitziehen (x hochzählen, y neu schätzen).
 
 **Modus-Split:**

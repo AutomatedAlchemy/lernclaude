@@ -123,7 +123,8 @@ launch (tier model, same `_exec_or_konsole`), whose opening message
 `upcoming_exams()`. The dossier is everything *mechanically* extractable from
 the files every course is guaranteed to have: the Fortschritt line and file
 mtimes, the Themenkarte row count (CLAUDE.md), created/reviewed Häppchen
-counted from the exercise folder, the first fehlermuster.md entry (dominant by
+counted from the exercise folder, the top row of the `## Aktive Muster` table
+in fehlermuster.md (or the first entry of an older log-only file; dominant by
 convention), and the newest dated todo.md line (dotted dates need a 4-digit
 year — "27.07.10" is an old exam's filename). Deliberately NO file excerpts:
 the session has tools and is told to read the candidates' todo.md itself

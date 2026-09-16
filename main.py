@@ -629,7 +629,10 @@ def _scaffold_workspace(workspace: str) -> None:
                     "Fortschritt: 0/? Häppchen  *(y beim ersten Review schätzen — erst dann zeigt das Menü etwas)*\n"
                     "Übersicht: fehlt  *(wird beim Anlegen im Arbeitsmedium gebaut und vom User bestätigt — "
                     "dann hier „Übersicht: bestätigt YYYY-MM-DD“)*\n"),
-        ("fehlermuster.md", "# Fehlermuster\n\n> Nach JEDEM Review: Zitat → warum falsch → was stattdessen. Dominante Muster oben.\n"),
+        ("fehlermuster.md", "# Fehlermuster\n\n> Nach JEDEM Review: Zitat → warum falsch → was stattdessen.\n\n"
+                            "## Aktive Muster\n\n*(Rangliste, nach jedem Review umsortiert — Zeile 1 ist das dominante Muster)*\n\n"
+                            "| # | Muster | Belege | Stand |\n|---|--------|--------|-------|\n\n"
+                            "## Belege\n\n*(chronologisch anhängen, je Eintrag die Nummer des Musters)*\n"),
     ):
         f = ws / name
         if not f.exists():
@@ -1093,13 +1096,20 @@ def _haeppchen_counts(workspace: str) -> "tuple[int, int] | None":
 
 
 def _top_fehlermuster(workspace: str) -> "str | None":
-    """The first entry of fehlermuster.md — by convention the dominant one."""
+    """The dominant entry of fehlermuster.md: the first body row of the
+    `## Aktive Muster` ranking table (its Muster cell), or — in an older
+    log-only file — the first bullet or ### heading."""
     try:
         text = (Path(workspace) / "fehlermuster.md").read_text(encoding="utf-8")
     except OSError:
         return None
     for line in text.splitlines():
         stripped = line.strip()
+        if stripped.startswith("|"):
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            if len(cells) >= 2 and cells[0] not in ("#", "") and not set(cells[0]) <= set("-: "):
+                return _shorten(cells[1])
+            continue
         if stripped.startswith(("- ", "* ")) and len(stripped) > 4:
             return _shorten(stripped[2:])
         if stripped.startswith("### "):

@@ -35,7 +35,7 @@ The German terms are load-bearing, so they're worth knowing:
 | **Lern-Loop** | The study procedure defined in a workspace's `CLAUDE.md` |
 | **Lern-Set** | The files opened at the start of a session — reference sheets, newest problem set |
 | **Häppchen** | Literally "small bite" — one exercise-sized chunk of work |
-| **Fehlermuster** | Error patterns: a running log of mistakes, used to target the next Häppchen |
+| **Fehlermuster** | Error patterns: a ranked table of the mistakes still open, plus the log of evidence behind each; used to target the next Häppchen |
 | **Themenkarte** | Topic map: the exam's topics and the typical trap in each |
 
 ## Requirements
@@ -284,7 +284,7 @@ Onboarding stamps a minimal skeleton and never overwrites an existing file:
 |---|---|
 | `CLAUDE.md` | The Lern-Loop procedure and exam facts. Stamped from `templates/LERNLOOP_TEMPLATE.md`. |
 | `todo.md` | Where you left off — subject, exam date, active files, plus the two bookkeeping lines the menu reads (`Fortschritt: x/y Häppchen`, `Übersicht: bestätigt YYYY-MM-DD`) |
-| `fehlermuster.md` | Error-pattern log; the loop reads this to target the next exercise |
+| `fehlermuster.md` | Error patterns: ranked `## Aktive Muster` table on top (the menu's dossier reads its first row), chronological `## Belege` log below |
 | `Personalisierte_Übungen/` | Generated exercises land here |
 
 Everything else is created on demand, when a workflow is first used.
