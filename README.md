@@ -21,10 +21,9 @@ past papers, and problem sets, plus a `CLAUDE.md` describing how you want to stu
 *that* subject. `lernen <workspace>` starts Claude with its working directory set
 there, so Claude Code loads that `CLAUDE.md` automatically and follows it.
 
-The launcher stays deliberately thin: about 700 lines that pick a folder, detect
-your subscription tier, and send a "let's study" trigger. It contains no study
-procedure at all. Improve the loop by editing a workspace's `CLAUDE.md`, not this
-code.
+The launcher stays deliberately thin: about 2000 lines that pick a folder, pick a
+model, and send a "let's study" trigger. It contains no study procedure at all.
+Improve the loop by editing a workspace's `CLAUDE.md`, not this code.
 
 ### Vocabulary
 
@@ -204,7 +203,8 @@ shows the system prompt without launching or remembering.
 
 Sessions work in one of two media: **Xournal++ + Firefox** (exercise PDF in the
 browser, calculations on a separate `.xopp` sheet) or a **Tutor Board** (a web
-whiteboard with one tab per exercise). The active medium is a single
+whiteboard with one tab per exercise; see § Tutor Board, it needs an account on
+the author's service). The active medium is a single
 launcher-level switch — toggle it with `m` in the menu, `lernen --set-medium
 xournalpp|board`, or `LERNCLAUDE_MEDIUM` — not a per-course fact.
 
@@ -214,6 +214,32 @@ instructions at all, so improving how a medium works is one edit for all
 subjects. Mid-session you can still switch verbally ("lass uns aufs Board") —
 the session carries on and reminds you to flip the menu switch for next time. A
 course whose own `CLAUDE.md` pins a fixed medium overrides the switch.
+
+### Tutor Board
+
+The `board` medium targets Tutor Board, the author's agent-driven live
+whiteboard at <https://beta.probable.work>. An LLM agent connected to it as an
+MCP (Model Context Protocol) connector — `https://beta.probable.work/mcp`,
+OAuth 2.1 + PKCE (Proof Key for Code Exchange) — builds the board out of typed
+blocks: Markdown with LaTeX, input widgets, sandboxed interactive HTML,
+drawable canvases, images. It reads the learner's answers and drawings back the
+same way.
+
+Boards need a probable.work account, and accounts are invite-only. Without one
+the `board` medium has nothing to talk to — use `xournalpp` then. Setup and the
+agent-facing docs are served live at <https://beta.probable.work/setup.md> and
+<https://beta.probable.work/agent.md>.
+
+lernclaude carries no MCP client and no credentials for the board. The
+connection comes from your own Claude Code MCP config, and
+`templates/medium_board.md` only tells the loop what to do with a board, not how
+the tools work.
+
+Status as of 2026-09-16: the service is multi-user — each board belongs to one
+account, and state is persisted per account. Running several agents in parallel
+on one account is not safe yet: board selection is shared per account link, and
+reads of events and chat are consumed by whichever agent reads first. One agent
+per account link is the supported mode.
 
 ### The exam banner
 
@@ -225,8 +251,8 @@ left, coloured red inside three days and yellow inside ten:
 ╭─ lernclaude — Kurs wählen ─╮
 
   ⏳ Nächste Klausuren
-      in 34 T  ·  Mi 16.09. 09:00   ·  Experimentalphysik II
-      in 39 T  ·  Mo 21.09. 09:00   ·  Datenerfassung u. Modellierung
+      in 34 T  ·  Mi 16.09. 09:00   ·  Lineare Algebra I
+      in 39 T  ·  Mo 21.09. 09:00   ·  Thermodynamik
 ```
 
 Point at the file with `LERNCLAUDE_EXAMS=/path/to/exams.md`, or store the path
@@ -241,8 +267,8 @@ label column (`Fach`, `Kurs`, `Modul`, `Prüfung`, `Klausur`, `Subject`,
 ```markdown
 | Prüf-Nr | Fach                  | ECTS | Termin              |
 |---------|-----------------------|-----:|---------------------|
-| 66821   | Experimentalphysik II |  2,5 | **Mi 16.09. 09:00** |
-| 57181   | Introduction to ML    |    5 | **Fr 25.09.**       |
+| 12345   | Lineare Algebra I     |  2,5 | **Mi 16.09. 09:00** |
+| 23456   | Thermodynamik         |    5 | **Fr 25.09.**       |
 ```
 
 The time is optional. A bare `12.01.` with no year is read as the *next*
@@ -344,8 +370,7 @@ chat.
 ## Tests
 
 ```bash
-python3 -m pytest -q          # 42 offline tests, no network, no launch
-python3 tier.py               # tier doctests + report this host's detected tier
+python3 -m pytest -q          # 18 offline tests, no network, no launch
 ```
 
 ## License

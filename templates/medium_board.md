@@ -1,5 +1,9 @@
 # Arbeitsmedium-Mechanik: Tutor Board
 
+**Voraussetzung:** Das Board braucht ein Tutor-Board-Konto (Einladung nötig,
+beta.probable.work). Die MCP-Verbindung wird außerhalb von lernclaude
+konfiguriert.
+
 **Bedienung des Boards:** den Tool-Beschreibungen und den Server-Instructions des
 Tutor-Board-MCP folgen. Diese Datei sagt nur, was der Lern-Loop auf dem Board haben
 will. Bei Widerspruch gewinnt der Server; eine Eigenheit des Servers wird dort
