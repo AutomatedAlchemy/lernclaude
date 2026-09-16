@@ -20,7 +20,7 @@ workspace's `CLAUDE.md`, not this code. Tested on Linux with KDE.
 ## Install
 
 ```bash
-git clone https://github.com/Probst1nator/lernclaude.git
+git clone https://github.com/AutomatedAlchemy/lernclaude.git
 cd lernclaude
 python3 main.py          # menu; first entry is "neuen Kurs anlegen"
 python3 main.py --install # desktop icon + `lernen` alias
