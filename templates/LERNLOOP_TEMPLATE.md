@@ -21,10 +21,23 @@ Der Klausur-Bauplan: die Themen + je Thema die typische Falle. Bewusst ein
 Abschnitt in dieser Datei und keine eigene Datei — so lädt Claude ihn
 automatisch mit. Die Häppchen rotieren durch diese Themen.
 
-| # | Thema | Typische Falle |
-|---|-------|----------------|
-| 1 | «…» | «…» |
-| 2 | «…» | «…» |
+**Herleitung, in dieser Reihenfolge:** zuerst die **Altklausuren** (jede Aufgabe
+jeder Altklausur bekommt eine Zeile, in der sie steht), dann die **Tutorien /
+Übungsblätter**, zuletzt die **Vorlesungen**. Die Tutorien decken nicht alles ab,
+was die Klausur fragt: in Experimentalphysik II (2026) fehlten Optik und
+Thermodynamik in allen Tutorien, waren aber in beiden Altklausuren der
+zweitgrößte Block und wurden nie geübt. Jede Zeile nennt ihre Quelle. Fehlen
+Altklausuren, steht das als offene Frage in der Vereinbarung, und die Karte gilt
+als vorläufig.
+
+**Deckungsprobe** (beim Anlegen und bei jeder neu gefundenen Altklausur): jede
+Aufgabe jeder Altklausur lässt sich einer Zeile zuordnen, sonst kommt eine Zeile
+dazu. Das Ergebnis steht in der Vereinbarung.
+
+| # | Thema | Typische Falle | Quelle |
+|---|-------|----------------|--------|
+| 1 | «…» | «…» | «Altklausur SS25 Nr. 6 · Tut. 3 · VL 5» |
+| 2 | «…» | «…» | «…» |
 
 ## Kursübersicht (beim Anlegen bauen, vom User bestätigen)
 
@@ -44,10 +57,14 @@ höchstens 6 Sätze, je Material ein Halbsatz.
    typische Falle, und welches Material das Thema abdeckt.
 3. **Materialien** — jede Datei und jeder Ordner im Kurs-Ordner und jede Quelle
    (Folien, Übungsblätter, Altklausuren, Skript, Bücher): was es ist, wofür es
-   taugt, wie der Loop es nutzt. Der Lerner soll jedes Material von der
-   Übersicht aus erreichen können.
-4. **Vereinbarung** — was drin ist, was ausdrücklich nicht, offene Fragen an den
-   User. Der User bestätigt; erst dann gilt sie.
+   taugt, wie der Loop es nutzt, und **ob die Session es gelesen hat** (gelesen /
+   überflogen / ungelesen; Scans ohne Textebene zählen erst als gelesen, wenn sie
+   visuell durchgesehen wurden). Ungelesenes Material ist eine Lücke der
+   Themenkarte und steht als solche in der Vereinbarung. Der Lerner soll jedes
+   Material von der Übersicht aus erreichen können.
+4. **Vereinbarung** — was drin ist, was ausdrücklich nicht, das Ergebnis der
+   Deckungsprobe (§Themenkarte), offene Fragen an den User. Der User bestätigt;
+   erst dann gilt sie.
 
 Ort: im Arbeitsmedium (Mechanik im Systemprompt), nicht als Datei — der Lerner
 sieht nur das Medium. Buchung: genau eine Zeile `Übersicht: bestätigt YYYY-MM-DD`
