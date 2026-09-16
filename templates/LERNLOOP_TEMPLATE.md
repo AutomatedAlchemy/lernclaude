@@ -15,6 +15,16 @@
 | **Bestehen ab** | «z.B. 50 %» |
 | **Hilfsmittel** | «z.B. 5 handschriftliche A4-Seiten \| keine \| Formelsammlung» |
 
+**Unbekannte Eckdaten blockieren.** Ist ein Feld beim Anlegen unbekannt (vor allem
+Hilfsmittel, Datum, Bestehensgrenze), steht es in der Vereinbarung als offene Frage
+**mit Frist**: spätestens nach drei Tagen geklärt, über Kursseite und Ankündigungen,
+den Abgleich mit der Prüfungsdatei, die das Startmenü für seine Klausurzeile liest,
+sonst über eine Frage an den Prüfer. Nicht „vorsichtshalber ohne üben" (EP2 2026:
+vier Wochen mit falschem Datum und unbekannten Hilfsmitteln, obwohl die
+Prüfungsdatei beides richtig hatte). Sobald ein handschriftliches Blatt erlaubt ist,
+wird `Klausur_mitnehmen/` **am selben Tag** angelegt und ab dem nächsten Review
+mitgeführt, nicht in der letzten Woche.
+
 ## Themenkarte (beim Anlegen aus dem Material füllen)
 
 Der Klausur-Bauplan: die Themen + je Thema die typische Falle. Bewusst ein
@@ -101,8 +111,9 @@ geändert, verschoben oder gelöscht.
 - **`notebooklm_lernpausen.md`** (nur wenn du Lernpausen-Videos willst) — EIN
   kompaktes NotebookLM-Doc: (A) Fehlermuster, (B) Themen im Schnelldurchlauf. Kein
   LaTeX, Unicode. Dynamisch, nicht kumulativ.
-- **`Klausur_mitnehmen/`** (nur falls Hilfsmittel erlaubt) — Mitnehm-Blätter;
-  Patch-SSoT `cheatsheet_personalisierung.md` (Fehlermuster → Blatt-Änderungen).
+- **`Klausur_mitnehmen/`** (nur falls Hilfsmittel erlaubt, dann ab dem Tag, an dem
+  das feststeht) — Mitnehm-Blätter; Patch-SSoT `cheatsheet_personalisierung.md`
+  (Fehlermuster → Blatt-Änderungen), nach jedem Review geprüft.
 
 ## Lern-Loop (der Kern)
 
