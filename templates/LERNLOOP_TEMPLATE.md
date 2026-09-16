@@ -92,6 +92,12 @@ diese Zeile. Bei Neubestätigung das Datum ersetzen.
   du kannst die eine Zeile oben pflegen oder pro Sitzung eine neue anhängen. Im Fließtext
   erwähnte Zahlen gehören eingerückt, nie an den Zeilenanfang.
   Zweite Pflichtzeile: `Übersicht: bestätigt YYYY-MM-DD` (siehe §Kursübersicht).
+  Dritte Zeile, nach jedem Review nachgezogen: `Budget: T Tage · h Häppchen/Tag ·
+  n Themen offen`. Reicht T·h nicht für eine Runde über die offenen Themen, schlägt
+  die Session **von sich aus** einen gekürzten Pfad vor (welche Zeilen der Themenkarte
+  gestrichen werden; Altklausur-belegte Zeilen zuerst behalten) und lässt ihn
+  bestätigen. Nicht warten, bis der User „zu viele Themen" sagt (EP2 2026: 36 Themen,
+  ein Häppchen alle drei Tage, zweimal erst auf Beschwerde gekürzt).
 - **`fehlermuster.md`** = *was ich falsch mache*, der personalisierte Kern. Zwei Teile:
   oben die **Rangliste** `## Aktive Muster`, eine Tabelle `# | Muster | Belege | Stand`
   (Belege als Zahl, Stand offen / repariert), nach jedem Review umsortiert, das
