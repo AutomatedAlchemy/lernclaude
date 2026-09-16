@@ -440,9 +440,9 @@ _EXAM_TABLE = """# Prüfungen
 | 57561 | ML in Materialwissenschaften | **schriftlich** — Mail 23.07. | 7,5 | **Fr 31.07. 09:00** (90 min) | Pelz |
 | 57121 | Math für Data Science 2 | Klausur | 8 | ~~Mo 20.07.~~ **nicht bestanden** | Kronz |
 | 50641 | Math. Grundlagen ML | mündlich | 5 | **abgelegt Fr 24.07. — bestanden 1,7** | Pelz |
-| 66821 | Experimentalphysik II | Klausur | 2,5 | **Mi 16.09. 09:00** | Krstic |
-| 57181 | Introduction to ML | Klausur | 5 | **Fr 25.09.** | Maier |
-| 57190 | Analysis | Klausur | 5 | **Mo 12.01. 08:00** | Maier |
+| 12345 | Lineare Algebra I | Klausur | 2,5 | **Mi 16.09. 09:00** | Musterfrau |
+| 23456 | Thermodynamik | Klausur | 5 | **Fr 25.09.** | Mustermann |
+| 34567 | Analysis | Klausur | 5 | **Mo 12.01. 08:00** | Mustermann |
 
 | Modul-Nr | Modul | ECTS | Note |
 |---|---|---:|---|
@@ -459,7 +459,7 @@ def test_exam_table_parsing(tmp_path, monkeypatch):
     f.write_text(_EXAM_TABLE, encoding="utf-8")
     monkeypatch.setenv("LERNCLAUDE_EXAMS", str(f))
     rows = m.upcoming_exams(now=datetime.datetime(2026, 8, 13, 10, 0))
-    assert [r[2] for r in rows] == ["Experimentalphysik II", "Introduction to ML", "Analysis"]
+    assert [r[2] for r in rows] == ["Lineare Algebra I", "Thermodynamik", "Analysis"]
     assert rows[0][:2] == (34, "Mi 16.09. 09:00")
     assert rows[1][1] == "Fr 25.09."                          # no time in the cell
     assert rows[2][1] == "Di 12.01. 08:00" and rows[2][0] > 100   # January = next year
