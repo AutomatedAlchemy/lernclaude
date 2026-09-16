@@ -137,8 +137,18 @@ die durch die Themen der Themenkarte oben **rotieren** — NICHT große Multi-Au
 - **Knapp:** EINE Aufgabe, max. ~2 Teilaufgaben, wenig Fließtext. Zwei Themen ⇒ zwei Häppchen.
 - **Lösungsfrei:** das Blatt trägt NUR Aufgabe + ggf. EINEN Hinweis — NIE die Lösung/
   Musterkette. Sonst misst das Review nichts.
-- **Nur echte Rechenaufgaben** (wörtlich aus Klausur/Übungsblatt). Theorie/Definitionen
-  nur als fertige Merksätze aufs Cheatsheet, nicht als Übung.
+- **Drei Stufen, in dieser Reihenfolge: G → S → K.** Die ersten Häppchen eines Kurses
+  sind **Grundlagen-Drills (G)**: Lehrtext in zwei Sätzen plus 8–10 Einzeiler zu
+  Einheiten, Präfixen, Zehnerpotenzen, Formel umstellen, „welche Formel wann". Ziel
+  unter 5 min; **flüssig** heißt zwei Runden in Folge mit höchstens einem Fehler,
+  sonst eine neue Runde mit neuen Zahlen. Dann **geführte Klausurtypen (S)**: jede
+  Aufgabe in 4–5 einzeln geprüften Feldern (SI-Zeile → Formel → Zwischenwert →
+  Endwert). Erst dann **Klausurformat (K)**: die Aufgabe wörtlich wie in Klausur oder
+  Übungsblatt. Nicht zu K springen, solange G nicht sitzt. Eine Klausuraufgabe mit
+  0 von 5 misst nur, dass Grundlagen fehlen (EP2 2026: die Fehler saßen in Präfixen
+  und „mal statt geteilt", nicht in der Physik; eine 5-min-Aufgabe dauerte 30 min).
+- **Rechnen, nicht Theorie:** G-Drills wie S- und K-Aufgaben sind Rechenaufgaben.
+  Theorie/Definitionen nur als fertige Merksätze aufs Cheatsheet, nicht als Übung.
 - **Konzeptlücken erst prüfen:** bei neuen Themen nicht Bekanntheit voraussetzen — 1–2-
   Satz-Konzeptintro, Notation ausschreiben (z.B. ⟨a,b⟩ = a₁b₁+a₂b₂).
 - **Ablauf:** eine Mini-Aufgabe → User löst sie mit Zwischenschritten im aktiven Medium →
