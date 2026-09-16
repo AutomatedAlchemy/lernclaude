@@ -186,13 +186,17 @@ def _set_medium(medium: str) -> str:
 # backend and models: autoselected from the model choice (menu key `o`)
 # ----------------------------------------------------------------------------
 _BACKENDS = ("claude", "fauclaude")
-_ANTHROPIC_MODELS = ("auto", "opus", "sonnet", "fable")
+_ANTHROPIC_MODELS = ("opus", "sonnet", "fable")
 _ANTHROPIC_MODEL_LABELS = {
-    "auto": "automatisch (Tier)",
     "opus": "Opus",
     "sonnet": "Sonnet",
     "fable": "Fable",
 }
+# What a fresh registry launches with. Opus at medium is the deliberate default
+# (user, 2026-09-16), replacing the old `auto` tier lookup: the pick is set in
+# the menu with `o` / `e` and persisted, so it is visible rather than derived.
+DEFAULT_MODEL = "opus"
+DEFAULT_EFFORT = "medium"
 _DEFAULT_FAU_MODELS = (
     "deepseek-ai/DeepSeek-V4-Flash-0731",
     "deepseek-ai/DeepSeek-V4-Flash",
@@ -209,9 +213,8 @@ _DEFAULT_FAU_MODELS = (
     "intfloat/multilingual-e5-large",
     "llamaindex/vdr-2b-multi-v1",
 )
-_EFFORTS = ("auto", "low", "medium", "high")
-_EFFORT_LABELS = {"auto": "automatisch (Tier)", "low": "low",
-                  "medium": "medium", "high": "high"}
+_EFFORTS = ("low", "medium", "high")
+_EFFORT_LABELS = {"low": "low", "medium": "medium", "high": "high"}
 
 
 def _discover_fau_models() -> list[str]:
@@ -368,14 +371,9 @@ def _backend_model_args() -> list[str]:
     """
     backend = _current_backend()
     if backend == "fauclaude":
-        model = _current_model()
-        effort = _current_effort()
-        args: list[str] = []
-        if model != "auto":
-            args.extend(["--model", model])
-        if effort != "auto":
-            args.extend(["--effort", effort])
-        return args
+        # fauclaude picks its own default when a flag is absent, but the pin is
+        # always concrete now, so both are always passed.
+        return ["--model", _current_model(), "--effort", _current_effort()]
     return [
         "--model", _select_model(),
         "--effort", _select_effort(),
@@ -383,19 +381,15 @@ def _backend_model_args() -> list[str]:
 
 
 def _current_model() -> str:
-    """The picked model: env override wins, else registry, else auto."""
-    if os.environ.get("LERNCLAUDE_MODEL"):
-        return os.environ["LERNCLAUDE_MODEL"]
-    raw = str(_load_registry().get("model") or "auto").strip()
-    return raw if raw else "auto"
+    """The picked model from the registry, else the default."""
+    raw = str(_load_registry().get("model") or "").strip()
+    return raw if raw else DEFAULT_MODEL
 
 
 def _current_effort() -> str:
-    """The picked effort: env override wins, else registry, else auto."""
-    if os.environ.get("LERNCLAUDE_EFFORT"):
-        return os.environ["LERNCLAUDE_EFFORT"]
-    raw = str(_load_registry().get("effort") or "auto").strip().lower()
-    return raw if raw in _EFFORTS else "auto"
+    """The picked effort from the registry, else the default."""
+    raw = str(_load_registry().get("effort") or "").strip().lower()
+    return raw if raw in _EFFORTS else DEFAULT_EFFORT
 
 
 def _set_model(model: str) -> str:
@@ -542,26 +536,15 @@ def opening_message(workspace: str) -> str:
 # launch
 # ----------------------------------------------------------------------------
 def _select_model() -> str:
-    """The picked model, or this host's tier model when the pick is `auto` —
-    opus on Max, sonnet on Pro/unknown (see `tier.py`). The menu switch (`o`),
-    ``--set-model`` and ``LERNCLAUDE_MODEL`` all feed `_current_model`."""
-    picked = _current_model()
-    if picked != "auto":
-        return picked
-    from tier import model_effort
-    return model_effort()[0]
+    """The model a launch gets — whatever the menu (`o`) or ``--set-model``
+    last pinned, else the default."""
+    return _current_model()
 
 
 def _select_effort() -> str:
-    """The picked effort, or the tier band when the pick is `auto`. Auto lands
-    on medium — the Lern-Loop is interactive tutoring, not a heavy one-shot job,
-    and a Max host is clamped there. An explicit pick (menu key `e`,
-    ``--set-effort``, ``LERNCLAUDE_EFFORT``) is passed through unclamped."""
-    picked = _current_effort()
-    if picked != "auto":
-        return picked
-    from tier import tier_effort
-    return tier_effort("medium")
+    """The effort a launch gets. Used exactly as picked: an explicit choice in
+    the menu is not second-guessed by the per-tier band (user, 2026-09-16)."""
+    return _current_effort()
 
 
 def _build_argv(workspace: str) -> list[str]:
@@ -1608,10 +1591,10 @@ def _menu_loop(stdscr, data: dict):
     medium = str(data.get("medium") or "xournalpp")
     if medium not in _MEDIA:
         medium = "xournalpp"
-    model = str(data.get("model") or "auto")
-    effort = str(data.get("effort") or "auto").lower()
+    model = str(data.get("model") or DEFAULT_MODEL)
+    effort = str(data.get("effort") or DEFAULT_EFFORT).lower()
     if effort not in _EFFORTS:
-        effort = "auto"
+        effort = DEFAULT_EFFORT
     while True:
         remaining = 10.0 - (time.monotonic() - start)
         stdscr.erase()
@@ -1888,11 +1871,11 @@ def main() -> int:
                         help="set the working medium the sessions use (xournalpp | board); "
                              "also toggled in the menu with `m`")
     parser.add_argument("--set-model", metavar="MODEL", dest="set_model", default=None,
-                        help="set the model the sessions launch with (auto, opus, sonnet, fable, or any FAU model); "
+                        help="set the model the sessions launch with (opus, sonnet, fable, or any FAU model); "
                              "also switched in the menu with `o`")
     parser.add_argument("--set-effort", metavar="EFFORT", dest="set_effort", default=None,
                         choices=list(_EFFORTS),
-                        help="set the effort the sessions launch with (auto | low | medium | high); "
+                        help="set the effort the sessions launch with (low | medium | high); "
                              "also switched in the menu with `e`")
     parser.add_argument("--set-default", metavar="PATH", dest="set_default", default=None,
                         help="set PATH as the menu's default (auto-selected after 10s); "

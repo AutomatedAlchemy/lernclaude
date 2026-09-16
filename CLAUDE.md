@@ -291,17 +291,15 @@ duplication.
 
 ## Model and effort
 
-`tier.py` is vendored, stdlib-only, and self-contained. It reads
-`~/.claude.json` → `.oauthAccount.organizationType` — **not** the startup banner,
-which is unstable across locales and releases.
+Launches use the registry keys `model` and `effort` directly, defaulting to
+**opus** at **medium** effort (`DEFAULT_MODEL` / `DEFAULT_EFFORT` in `main.py`).
+Medium is a deliberate ceiling, not an oversight: this is interactive tutoring,
+where latency is felt more than extra depth helps.
 
-Max → opus, Pro → sonnet, both clamped to `medium` effort. Medium is a deliberate
-ceiling, not an oversight: this is interactive tutoring, where latency is felt more
-than extra depth helps. `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT` override, and
-`CLAUDE_TIER_OVERRIDE` forces a tier for tests.
-
-That policy is what the registry keys `model` and `effort` mean by `auto`, their
-default. They are launcher-level switches shaped exactly like the medium
+The pick is used exactly as set — there is no tier detection and no clamp
+(user, 2026-09-16). `auto`, the `LERNCLAUDE_MODEL` / `LERNCLAUDE_EFFORT`
+overrides and the tier lookup they fed were all removed then; `tier.py` is
+retained but no longer imported. They are launcher-level switches shaped exactly like the medium
 switch (menu keys `m` / `o` / `e`, `--set-medium` / `--set-model` /
 `--set-effort`, env override on top),
 and `_select_model` / `_select_effort` are the model readers. An explicit pick
@@ -316,9 +314,8 @@ with `_DEFAULT_FAU_MODELS` as the offline fallback). `_backend_for_model` maps
 an Anthropic name to `claude` and anything else to `fauclaude`;
 `LERNCLAUDE_BACKEND` still overrides that for one launch. For `fauclaude` the
 launcher resolves the command via `PATH`, `LERNCLAUDE_FAUCLAUDE_CMD`, or the
-sibling repo path (`MatSci/NHR/fauclaude/main.py`), passes the picked model
-through and omits `--effort` while it is `auto`, so the gateway's own settings
-apply.
+sibling repo path (`MatSci/NHR/fauclaude/main.py`), and passes the picked model
+and effort through — both are always concrete now that `auto` is gone.
 
 ## Commits: make them yourself, leave the push
 

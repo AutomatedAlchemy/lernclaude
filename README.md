@@ -77,8 +77,8 @@ lernen --menu                # force the menu
 lernen --list                # print registered courses (* marks the default)
 lernen --set-default <ws>    # change which course autostarts
 lernen --set-medium <m>      # set the working medium (Userspace): xournalpp | board
-lernen --set-model <m>       # set the model: auto | opus | sonnet | fable | a FAU gateway model
-lernen --set-effort <e>      # set the effort: auto | low | medium | high
+lernen --set-model <m>       # set the model: opus | sonnet | fable | a FAU gateway model
+lernen --set-effort <e>      # set the effort: low | medium | high
 lernen --tutor               # Tutors Choice: one session that picks the most urgent course and tutors it
 lernen --quickie             # Quickie: one short, winnable Häppchen (5 min); counts a daily streak
 lernen --meta [ZIEL QUELLE…] # Meta-Häppchen: one short Häppchen in ZIEL shaped by the QUELLE courses; bare = last combination
@@ -301,27 +301,23 @@ All optional — the tool works with none of them set.
 | `LERNCLAUDE_EXAMS` | Markdown file with your exam-date table (banner off when unset; registry key `exams_file` does the same) |
 | `LERNCLAUDE_BACKEND` | Override the active backend for one launch (`claude` \| `fauclaude`) |
 | `LERNCLAUDE_FAUCLAUDE_CMD` | Explicit command / arguments to launch fauclaude |
-| `LERNCLAUDE_MODEL` | Pin the model, skipping tier detection |
-| `LERNCLAUDE_EFFORT` | Pin the effort level (default: the menu pick, else `medium`) |
 | `LERNCLAUDE_MEDIUM` | Override the working medium for one launch (`xournalpp` \| `board`) |
-| `CLAUDE_TIER_OVERRIDE` | Force `max` / `pro` instead of detecting |
 
 ### Model selection
 
-`tier.py` reads `~/.claude.json` to find your subscription tier and picks
-accordingly: **Max → opus**, **Pro → sonnet**, both at `medium` effort. Medium is
-deliberate — the loop is interactive tutoring, where latency is felt more than
-extra reasoning depth helps. Both the mapping and the effort band are two dicts at
-the top of `tier.py`; edit them if you disagree.
+Sessions launch on **Opus at `medium` effort** by default. Medium is deliberate —
+the loop is interactive tutoring, where latency is felt more than extra reasoning
+depth helps.
 
-That is the `auto` setting. The menu has switches next to the Userspace
-row — `o` cycles the model (auto | Opus | Sonnet | Fable, then the models
-hosted on the NHR@FAU LLM Gateway, shown as `fau: <name>`), `e` the effort
-(auto | low | medium | high) — and an explicit pick is used as-is, without the
-tier clamp. Picking a gateway model launches through `fauclaude` instead of
-`claude`; there is no separate backend switch. Both persist in the registry;
-`--set-model` / `--set-effort` set them from a script, `LERNCLAUDE_MODEL` /
-`LERNCLAUDE_EFFORT` override one launch, and `LERNCLAUDE_BACKEND` forces the
+You change it in the menu, next to the Userspace row: `o` cycles the model
+(Opus | Sonnet | Fable, then the models hosted on the NHR@FAU LLM Gateway, shown
+as `fau: <name>`), `e` the effort (low | medium | high). The pick is used exactly
+as chosen — nothing clamps it — and persists in the registry as the new default,
+so it is set once per course collection rather than per launch. `--set-model` /
+`--set-effort` do the same from a script.
+
+Picking a gateway model launches through `fauclaude` instead of `claude`; there
+is no separate backend switch, though `LERNCLAUDE_BACKEND` still forces the
 launcher regardless of the model.
 
 ### The registry

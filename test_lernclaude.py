@@ -147,7 +147,7 @@ def test_medium_choice_precedence(monkeypatch):
 
 
 def test_backend_autoselection_from_model(monkeypatch):
-    assert m._current_backend() == "claude"                  # auto -> claude
+    assert m._current_backend() == "claude"                  # default -> claude
     m._set_model("opus")
     assert m._current_backend() == "claude"
     m._set_model("deepseek-ai/DeepSeek-V4-Flash-0731")
@@ -157,8 +157,9 @@ def test_backend_autoselection_from_model(monkeypatch):
     assert "fau: gpt-oss-120b" in m._model_label("gpt-oss-120b")
     assert m._model_label("opus") == "Opus"
     models = m._available_models()
-    assert "auto" in models and "opus" in models and "deepseek-ai/DeepSeek-V4-Flash-0731" in models
-    monkeypatch.setenv("LERNCLAUDE_MODEL", "sonnet")
+    assert "opus" in models and "deepseek-ai/DeepSeek-V4-Flash-0731" in models
+    assert "auto" not in models                              # removed 2026-09-16
+    m._set_model("sonnet")
     assert m._current_backend() == "claude"
     monkeypatch.setenv("LERNCLAUDE_BACKEND", "fauclaude")
     assert m._current_backend() == "fauclaude"               # env override wins
@@ -258,9 +259,10 @@ def test_launches_exec_one_interactive_session(tmp_path, monkeypatch, spawns):
     assert "-p" not in spawns["exec"][0] and b in spawns["exec"][0][-1]
     reg = m._load_registry()
     assert reg["meta"] == {"target": a, "sources": [b], "total": 1} and reg["quickies"]["total"] == 3
-    monkeypatch.setenv("CLAUDE_TIER_OVERRIDE", "pro")
+    m._set_model("sonnet")                                   # the pin is what launches
     argv = m._build_argv(a)
     assert argv[argv.index("--model") + 1] == "sonnet"
+    m._set_model(m.DEFAULT_MODEL)
     # cwd: course → itself; tutor / multi-course quickie → common root; sole quickie → course
     spawns["exec"].clear()
     cwds = []
@@ -277,17 +279,18 @@ def test_launches_exec_one_interactive_session(tmp_path, monkeypatch, spawns):
 
 def test_backend_fauclaude_launches(tmp_path, monkeypatch, spawns):
     a, b = _courses(tmp_path, "A", "B")
-    monkeypatch.setenv("LERNCLAUDE_MODEL", "deepseek-ai/DeepSeek-V4-Flash-0731")
+    m._set_model("deepseek-ai/DeepSeek-V4-Flash-0731")
     monkeypatch.setenv("LERNCLAUDE_FAUCLAUDE_CMD", "fauclaude-custom --opt")
     argv = m._build_argv(a)
     assert argv[:2] == ["fauclaude-custom", "--opt"]
     assert argv[argv.index("--model") + 1] == "deepseek-ai/DeepSeek-V4-Flash-0731"
-    assert "--effort" not in argv
+    # Both flags are always concrete now that `auto` is gone.
+    assert argv[argv.index("--effort") + 1] == m.DEFAULT_EFFORT
     assert "--append-system-prompt" in argv
 
     # explicit model and effort are passed through
-    monkeypatch.setenv("LERNCLAUDE_MODEL", "gpt-oss-120b")
-    monkeypatch.setenv("LERNCLAUDE_EFFORT", "high")
+    m._set_model("gpt-oss-120b")
+    m._set_effort("high")
     argv_explicit = m._build_argv(a)
     assert argv_explicit[argv_explicit.index("--model") + 1] == "gpt-oss-120b"
     assert argv_explicit[argv_explicit.index("--effort") + 1] == "high"
