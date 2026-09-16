@@ -241,8 +241,9 @@ as an order. That is how a `kinds:["click","submit"]` line from an August
 workaround made a session deaf to the board chat on 2026-09-05, and earlier a
 "`select_board` does not exist" note made sessions build blindly.
 `test_medium_board_carries_no_mcp_manual` pins the boundary: a server fact that
-seems missing is added to the server's descriptions (probable-infrastructure,
-`probable.work/services/tutor-board/server/mcp.ts`), not to the template.
+seems missing is added to the server's descriptions — the Tutor Board server is
+a private repo of the author, agent docs at
+<https://beta.probable.work/agent.md> — not to the template.
 
 ## Autostart belongs to the installer, not to this file
 
@@ -268,7 +269,7 @@ out, so nothing here should ever point autostart at `--quickie` or a course.
 ## Tool-local state
 
 The registry lives at `data/registry.json`, anchored to `SCRIPT_DIR` — **not**
-`~/.config`. Rationale: the author runs this from a Syncthing-replicated checkout
+`~/.config`. Rationale: this is run from a checkout that is shared or replicated
 across several machines, and per-host config silently diverges (a course list once
 showed three courses on one host and one on another). Keeping it beside the tool
 makes the course list travel with the checkout.
@@ -318,52 +319,29 @@ launcher resolves the command via `PATH`, `LERNCLAUDE_FAUCLAUDE_CMD`, or the
 sibling repo path (`MatSci/NHR/fauclaude/main.py`), and passes the picked model
 and effort through — both are always concrete now that `auto` is gone.
 
-## Commits: make them yourself, leave the push
+## Commits
 
-Commit here without asking. The umbrella rule in [`../REPOS.md`](../REPOS.md)
-§ Autonomous commits gates non-Gitea repos by default; this section is this
-repo's own convention, the way `ssl/mujoco/` has one. The GitHub remote gates
-the push, not the commit.
-
+- **German summaries, as they are now**, and one concern per commit. Commit by
+  pathspec (`git commit -m "…" -- a b`) so an unrelated dirty file does not ride
+  along; `git add` only new paths.
 - **Check `git status` before your first edit.** A dirty tree is someone else's
-  unfinished work. Commit it as its own commit first, then start yours. Once your
-  edits are mixed into those files the two can no longer be separated by pathspec,
-  and one of them ends up in a commit that does not describe it (it happened,
-  2026-09-01: the medium switch and the Quickie shipped inside the Vorbereitung
-  commit).
-- **One purpose per commit**, and commit by pathspec — `git commit -m "…" -- a b`,
-  never `git add` + a bare `git commit`. New files are the one exception: `git add`
-  exactly those paths, then commit by pathspec as usual.
-- **Commit when the tree works**, not when the feature is finished. Green
-  `python3 -m pytest -q`, docs in the same commit as the code they describe
-  (README + this file + the mode tables), no `data/registry.json` (gitignored,
-  and it is mutable per-host state).
-- **Mark a repair when you make it**, so nobody reconstructs later which commit
-  fixed which: `git commit --fixup=<sha> -- <paths>`.
-- **Fold the fixups in one pass right before the push**, on one host:
-  `git rebase --autosquash origin/main`. Only fixups — collapsing the whole
-  unpushed window into one commit would undo the one-purpose rule above.
-- **Never rewrite at or below `origin/main`.** Pushed is permanent. Fix forward
-  with a normal commit.
-- **That narrow window is not fussiness: `.git` is Syncthing-replicated here.**
-  `~/Synced/.stignore` excludes only the volatile per-host files (`index`,
-  `FETCH_HEAD`, `ORIG_HEAD`, `logs`, …), so `refs/heads/main` and `objects/`
-  travel between machines and the reflog does not. Rewrite while another host
-  holds the old ref and you get a `.sync-conflict` copy of a ref or a silent
-  overwrite — git never sees either — with the only recovery net sitting on the
-  host that did the rewrite. Compare `probable-infrastructure/.git`, corrupted
-  on the Ideapad 2026-07-28.
-- **Never push, never open a PR.** `origin` is GitHub
-  (`Probst1nator/lernclaude`), and publishing is the user's call. Say the work is
-  committed, name the SHA, and stop there. The push is the only step that waits
-  for a person.
+  unfinished work. Commit it as its own commit first, then start yours — once the
+  edits are mixed the two can no longer be separated by pathspec.
+- **Tests pass before the commit.** `python3 -m pytest -q` green, and docs go in
+  the same commit as the code they describe (README + this file + the mode
+  tables). Never commit `data/registry.json`: it is gitignored, mutable per-host
+  state.
+- **Never push or open a PR on your own.** Publishing is the maintainer's call;
+  say the work is committed, name the SHA, and stop.
+- **Never rewrite at or below the published branch.** Pushed is permanent; fix
+  forward with a normal commit.
 
 ## Layout
 
 | File | Role |
 |------|------|
 | `main.py` | launcher, menu, registry, install/remove |
-| `tier.py` | vendored subscription-tier → model/effort mapping |
+| `tier.py` | vendored subscription-tier → model/effort mapping; **vendored, unused** — no longer imported |
 | `templates/LERNLOOP_TEMPLATE.md` | the Lern-Loop procedure stamped into new workspaces |
 | `templates/medium_*.md` | per-medium mechanics, appended to the system prompt |
 | `test_lernclaude.py` | 18 offline tests — behaviour only, no network, no launch |
@@ -374,10 +352,10 @@ the push, not the commit.
 - **`--advertise` must answer before any heavy import.** The installer times out
   after 5 s. The check sits above the `import argparse` block on purpose — don't
   move it.
-- **`tier` is a sibling import.** `SCRIPT_DIR` is spliced onto `sys.path` at module
-  level so it resolves both when run directly and when the tests load `main.py` by
-  file location. Static analysers flag this import as unresolved; it works at
-  runtime and the tests cover it.
+- **`SCRIPT_DIR` is spliced onto `sys.path` at module level** so a sibling import
+  resolves both when `main.py` is run directly and when the tests load it by file
+  location. Nothing imports `tier` any more, but the splice is what makes that
+  pattern work; keep it if a sibling module comes back.
 - **`.desktop` files hold absolute paths.** Moving or renaming this directory means
   `--remove` then `--install` from the new location.
 - **The nvm PATH fix in `_launch_env()` is not optional.** A `.desktop` launch
@@ -390,7 +368,6 @@ the push, not the commit.
 
 ```bash
 python3 -m pytest -q     # 18 tests, offline
-python3 tier.py          # doctests + report this host's detected tier
 ```
 
 Tests load `main.py` under a unique module name via `importlib` rather than
