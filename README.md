@@ -76,7 +76,7 @@ lernen --menu                # force the menu
 lernen --list                # print registered courses (* marks the default)
 lernen --set-default <ws>    # change which course autostarts
 lernen --set-medium <m>      # set the working medium (Userspace): xournalpp | board
-lernen --set-model <m>       # set the model: opus | sonnet | fable | a FAU gateway model
+lernen --set-model <m>       # set the model: opus | sonnet | fable
 lernen --set-effort <e>      # set the effort: low | medium | high | xhigh | max
 lernen --tutor               # Tutors Choice: one session that picks the most urgent course and tutors it
 lernen --quickie             # Quickie: one short, winnable Häppchen (5 min); counts a daily streak
@@ -325,8 +325,6 @@ All optional — the tool works with none of them set.
 | `LERNCLAUDE_DEFAULT_WORKSPACE` | Override the registered default for one launch |
 | `LERNCLAUDE_ROOT` | Where guided onboarding starts searching (default: `$HOME`) |
 | `LERNCLAUDE_EXAMS` | Markdown file with your exam-date table (banner off when unset; registry key `exams_file` does the same) |
-| `LERNCLAUDE_BACKEND` | Override the active backend for one launch (`claude` \| `fauclaude`) |
-| `LERNCLAUDE_FAUCLAUDE_CMD` | Explicit command / arguments to launch fauclaude |
 | `LERNCLAUDE_MEDIUM` | Override the working medium for one launch (`xournalpp` \| `board`) |
 
 ### Model selection
@@ -336,15 +334,10 @@ the loop is interactive tutoring, where latency is felt more than extra reasonin
 depth helps.
 
 You change it in the menu, next to the Userspace row: `o` cycles the model
-(Opus | Sonnet | Fable, then the models hosted on the NHR@FAU LLM Gateway, shown
-as `fau: <name>`), `e` the effort (low | medium | high | xhigh | max). The pick is used exactly
-as chosen — nothing clamps it — and persists in the registry as the new default,
-so it is set once per course collection rather than per launch. `--set-model` /
-`--set-effort` do the same from a script.
-
-Picking a gateway model launches through `fauclaude` instead of `claude`; there
-is no separate backend switch, though `LERNCLAUDE_BACKEND` still forces the
-launcher regardless of the model.
+(Opus | Sonnet | Fable), `e` the effort (low | medium | high | xhigh | max). The
+pick is used exactly as chosen — nothing clamps it — and persists in the registry
+as the new default, so it is set once per course collection rather than per
+launch. `--set-model` / `--set-effort` do the same from a script.
 
 ### The registry
 
@@ -370,7 +363,7 @@ chat.
 ## Tests
 
 ```bash
-python3 -m pytest -q          # 18 offline tests, no network, no launch
+python3 -m pytest -q          # 17 offline tests, no network, no launch
 ```
 
 ## License
