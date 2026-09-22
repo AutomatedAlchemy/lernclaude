@@ -375,7 +375,7 @@ that value falls back to `DEFAULT_MODEL` instead of reaching a launch.
 | `tier.py` | vendored subscription-tier → model/effort mapping; **vendored, unused** — no longer imported |
 | `templates/LERNLOOP_TEMPLATE.md` | the Lern-Loop procedure stamped into new workspaces |
 | `templates/media/*.md` | per-medium mechanics, appended to the system prompt |
-| `test_lernclaude.py` | 23 offline tests — behaviour only, no network, no launch |
+| `test_lernclaude.py` | offline tests — behaviour only, no network, no launch |
 | `requirements.txt` | empty by design; stdlib only |
 
 ## Gotchas
@@ -398,7 +398,7 @@ that value falls back to `DEFAULT_MODEL` instead of reaching a launch.
 ## Tests
 
 ```bash
-python3 -m pytest -q     # 23 tests, offline
+python3 -m pytest -q     # offline
 ```
 
 Tests load `main.py` under a unique module name via `importlib` rather than
