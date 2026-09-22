@@ -337,6 +337,21 @@ that value falls back to `DEFAULT_MODEL` instead of reaching a launch.
 
 ## Commits
 
+- **Pick the branch before the first edit.** The checkout sits on `fau`, but
+  only the FAU layer belongs there: the fauclaude backend, the `fau:` models,
+  FAU names and URLs. Everything else goes on `main`, the public base version.
+  On 2026-09-22 two sessions committed general work on `fau` because this rule
+  was missing here, and it had to be ported by hand.
+- **Commit general work on `main` without switching the shared checkout:**
+  `git worktree add <scratch>/wt main`, edit, test and commit there, then
+  `git worktree remove`. Bring it into `fau` with `git merge main` in the
+  checkout. Merge, never rebase: `fau` is published on `fau/main`, and a rebase
+  rewrites those commits.
+- **A general change that calls FAU-layer code** (`_backend_for_model`,
+  `_discover_fau_models`, the fauclaude test) is split: the general part on
+  `main`, the FAU addition as its own commit on `fau` after the merge.
+- **Check before you report:** `git log --oneline --no-merges main..fau` lists
+  only FAU-layer commits.
 - **German summaries, as they are now**, and one concern per commit. Commit by
   pathspec (`git commit -m "…" -- a b`) so an unrelated dirty file does not ride
   along; `git add` only new paths.
