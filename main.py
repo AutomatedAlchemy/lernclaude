@@ -50,6 +50,11 @@ PARENT_METADATA = {
     # The entry runs the icon's argument-less Exec, which is the menu — never a
     # session directly, so the 10s countdown and its any-key cancel still apply.
     "default_autostart": True,
+    # Studying is a morning habit, so the login entry is worth gating on the
+    # clock. Only the KIND is named here — the window itself is personal and
+    # lives in the installer's autostart.json, per host. Needs cli-tools-kit
+    # >= 0.8.0; older installers ignore the field and start it every login.
+    "autostart_conditions": ["time_window"],
     # Deliberately NO skill_name: lernen is an agent you talk to, not a skill.
 }
 
