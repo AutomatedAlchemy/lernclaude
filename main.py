@@ -70,6 +70,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = SCRIPT_DIR / "templates"
@@ -1444,6 +1445,169 @@ def _confirm_delete(stdscr, C, path: str) -> bool:
             return False
 
 
+def _model_selection_menu(
+    stdscr: Any,
+    color_palette: dict[str, int],
+    available_models: list[str],
+    current_model: str,
+) -> str:
+    """Display an interactive curses menu for selecting an LLM model.
+
+    Allows navigating the list of available models using arrow keys or vi navigation
+    keys (k/j), selecting a model with Enter, and canceling with Escape, Backspace,
+    or Left arrow to return to the main menu without modifying the active model.
+    The list scrolls automatically when it exceeds the visible terminal height.
+
+    Args:
+        stdscr: The curses window surface used for drawing and reading input.
+        color_palette: Mapping of UI semantic color role names to curses color pairs.
+        available_models: List of selectable model identifier strings.
+        current_model: Identifier string of the currently active model.
+
+    Returns:
+        The selected model identifier string if confirmed with Enter, or the unchanged
+        current_model if cancelled.
+
+    Raises:
+        None: Terminal or rendering exceptions are caught and handled gracefully.
+    """
+    import curses
+
+    if not available_models:
+        return current_model
+
+    selected_index: int = (
+        available_models.index(current_model) if current_model in available_models else 0
+    )
+    scroll_offset: int = 0
+
+    try:
+        stdscr.timeout(-1)
+        while True:
+            stdscr.erase()
+            try:
+                terminal_height, terminal_width = stdscr.getmaxyx()
+            except Exception:
+                terminal_height, terminal_width = 24, 80
+
+            header_title = "╭─ lernclaude — Modell wählen ─╮"
+            _safe_addstr(stdscr, 0, 0, header_title, color_palette["title"])
+
+            header_subtitle = "  Wähle das LLM-Modell für die Lern-Sessions:"
+            _safe_addstr(stdscr, 1, 0, header_subtitle, color_palette["path"])
+
+            header_start_line: int = 3
+            footer_reservation: int = 2
+            visible_row_count: int = max(1, terminal_height - header_start_line - footer_reservation)
+
+            if selected_index < scroll_offset:
+                scroll_offset = selected_index
+            elif selected_index >= scroll_offset + visible_row_count:
+                scroll_offset = selected_index - visible_row_count + 1
+
+            if scroll_offset > 0:
+                _safe_addstr(
+                    stdscr,
+                    2,
+                    0,
+                    f"  ▲ ({scroll_offset} weitere Modelle oben)",
+                    color_palette["foot"],
+                )
+
+            visible_end_index = min(len(available_models), scroll_offset + visible_row_count)
+            for row_offset, model_index in enumerate(range(scroll_offset, visible_end_index)):
+                model_identifier = available_models[model_index]
+                is_cursor_on_row = (model_index == selected_index)
+                is_active_model = (model_identifier == current_model)
+
+                marker = " ▶ " if is_cursor_on_row else "   "
+                label = _model_label(model_identifier)
+                active_indicator = " ★ aktiv" if is_active_model else ""
+                line_text = f"{marker}{label}{active_indicator}"
+
+                if is_cursor_on_row:
+                    row_attribute = color_palette["tutor"] | curses.A_BOLD
+                elif is_active_model:
+                    row_attribute = color_palette["star"]
+                else:
+                    row_attribute = color_palette["path"]
+
+                _safe_addstr(
+                    stdscr,
+                    header_start_line + row_offset,
+                    0,
+                    line_text,
+                    row_attribute,
+                )
+
+            remaining_below = len(available_models) - visible_end_index
+            footer_line_top = max(header_start_line + visible_row_count, terminal_height - 2)
+            if remaining_below > 0:
+                indicator_row = min(
+                    header_start_line + (visible_end_index - scroll_offset),
+                    footer_line_top - 1,
+                )
+                _safe_addstr(
+                    stdscr,
+                    indicator_row,
+                    0,
+                    f"  ▼ ({remaining_below} weitere Modelle unten)",
+                    color_palette["foot"],
+                )
+
+            footer_instructions = "↑/↓ bewegen · Enter wählen · Esc / Backspace / ← zurück"
+            _safe_addstr(
+                stdscr,
+                terminal_height - 2,
+                0,
+                footer_instructions,
+                color_palette["foot"],
+            )
+
+            position_info = f"  Modell {selected_index + 1} von {len(available_models)}"
+            _safe_addstr(
+                stdscr,
+                terminal_height - 1,
+                0,
+                position_info,
+                color_palette["foot"],
+            )
+
+            stdscr.refresh()
+
+            key_pressed = stdscr.getch()
+            if key_pressed == -1:
+                continue
+
+            if key_pressed in (curses.KEY_UP, ord("k")):
+                selected_index = (selected_index - 1) % len(available_models)
+            elif key_pressed in (curses.KEY_DOWN, ord("j")):
+                selected_index = (selected_index + 1) % len(available_models)
+            elif key_pressed == curses.KEY_PPAGE:
+                selected_index = max(0, selected_index - visible_row_count)
+            elif key_pressed == curses.KEY_NPAGE:
+                selected_index = min(len(available_models) - 1, selected_index + visible_row_count)
+            elif key_pressed == curses.KEY_HOME:
+                selected_index = 0
+            elif key_pressed == curses.KEY_END:
+                selected_index = len(available_models) - 1
+            elif key_pressed in (curses.KEY_ENTER, 10, 13):
+                return available_models[selected_index]
+            elif key_pressed in (
+                27,  # Escape
+                curses.KEY_LEFT,  # Left arrow
+                curses.KEY_BACKSPACE,
+                127,  # DEL / Backspace
+                8,  # Backspace Ctrl+H
+                ord("\b"),
+                ord("h"),  # vi left / backwards
+                ord("q"),  # quit / back
+            ):
+                return current_model
+    finally:
+        stdscr.timeout(200)
+
+
 def _menu_rows(workspaces: list, meta: bool = False) -> list:
     """Quickie on top (as soon as there is a course), then Tutors Choice (only
     once there is something to choose between), the courses, the add row."""
@@ -1481,6 +1645,11 @@ def _menu_loop(stdscr, data: dict):
     effort = str(data.get("effort") or DEFAULT_EFFORT).lower()
     if effort not in _EFFORTS:
         effort = DEFAULT_EFFORT
+    # Discover models once up-front so that pressing "o" always cycles through the
+    # same stable, ordered list.  Re-discovering on every keypress hits the 2 s
+    # subprocess timeout each time and makes the list flip between the live order
+    # and the fallback order, causing the index arithmetic to jump unpredictably.
+    models_list: list[str] = _available_models()
     while True:
         remaining = 10.0 - (time.monotonic() - start)
         stdscr.erase()
@@ -1493,14 +1662,16 @@ def _menu_loop(stdscr, data: dict):
             for j, (text, severity) in enumerate(exams):
                 _safe_addstr(stdscr, top + 1 + j, 0, text, C[severity])
             top += len(exams) + 2   # banner + its heading + one blank line
-        for label, value, key in (("Userspace", _MEDIUM_LABELS[medium], "m"),
-                                  ("Modell", _model_label(model), "o"),
-                                  ("Effort", _EFFORT_LABELS[effort], "e")):
+        for label, value, hint in (
+            ("Userspace", _MEDIUM_LABELS[medium], "m = wechseln"),
+            ("Modell", _model_label(model), "o = wechseln · O = Menü"),
+            ("Effort", _EFFORT_LABELS[effort], "e = wechseln"),
+        ):
             head = f"  ✎ {label}: "
             _safe_addstr(stdscr, top, 0, head, C["title"])
             _safe_addstr(stdscr, top, len(head), value, C["tutor"])
             _safe_addstr(stdscr, top, len(head) + len(value),
-                         f"   ({key} = wechseln)", C["foot"])
+                         f"   ({hint})", C["foot"])
             top += 1
         top += 1
         for i, row in enumerate(rows):
@@ -1548,7 +1719,7 @@ def _menu_loop(stdscr, data: dict):
         else:
             _safe_addstr(stdscr, foot, 0,
                          "↑/↓ bewegen · Enter starten · Leertaste = Meta-Auswahl · m = Userspace · "
-                         "o = Modell · e = Effort · d = Standard · x = löschen · q = beenden",
+                         "o/O = Modell · e = Effort · d = Standard · x = löschen · q = beenden",
                          C["foot"])
         if autostart and not interacted:
             _safe_addstr(stdscr, foot + 1, 0,
@@ -1613,9 +1784,11 @@ def _menu_loop(stdscr, data: dict):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
         elif ch == ord("o"):
-            models_list = _available_models()
-            curr_idx = models_list.index(model) if model in models_list else 0
+            curr_idx = models_list.index(model) if model in models_list else -1
             model = models_list[(curr_idx + 1) % len(models_list)]
+            data["model"] = model  # persisted by the caller
+        elif ch in (ord("O"), ord("M")):
+            model = _model_selection_menu(stdscr, C, models_list, model)
             data["model"] = model  # persisted by the caller
         elif ch == ord("e"):
             effort = _EFFORTS[(_EFFORTS.index(effort) + 1) % len(_EFFORTS)]

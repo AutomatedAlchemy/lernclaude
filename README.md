@@ -111,9 +111,9 @@ course list on every machine.
 
 Sessions launch on **Opus at `medium` effort**. Medium is deliberate: the loop is
 interactive tutoring, where latency is felt more than reasoning depth helps. `o`
-and `e` in the menu (or `--set-model` / `--set-effort`) change model (Opus |
-Sonnet | Fable) and effort (low | medium | high | xhigh | max); the pick is used
-as chosen and persists in the registry.
+(cycle) or `O` (interactive menu) and `e` in the menu (or `--set-model` /
+`--set-effort`) change model (Opus | Sonnet | Fable) and effort (low | medium |
+high | xhigh | max); the pick is used as chosen and persists in the registry.
 
 A workspace itself is a normal folder with your material plus a `CLAUDE.md`.
 Onboarding stamps a minimal skeleton (`CLAUDE.md`, `todo.md`, `fehlermuster.md`,
