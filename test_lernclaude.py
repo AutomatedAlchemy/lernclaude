@@ -204,7 +204,7 @@ def test_cli_routes(tmp_path, monkeypatch, spawns):
     m._register_workspace(a); m._register_workspace(b)
     called = []
     for name in ("run_menu", "launch", "do_add", "_launch_tutor_choice", "_launch_quickie",
-                 "_launch_meta"):
+                 "_launch_meta", "_launch_gaertner"):
         monkeypatch.setattr(m, name, lambda *x, _n=name, **k: called.append(_n) or 0)
     cases = {
         (): "run_menu",
@@ -215,6 +215,9 @@ def test_cli_routes(tmp_path, monkeypatch, spawns):
         ("--meta", a, b): "_launch_meta",
         ("--meta",): None,              # nothing remembered yet (the stub above records nothing)
         ("--print-prompt", "--meta", a, b): None,
+        ("--gaertner",): "_launch_gaertner",
+        ("--gaertner", a): "_launch_gaertner",
+        ("--print-prompt", "--gaertner"): None,
         ("--dry-run",): None,           # inspection flags: no menu, no launch
         ("--print-prompt",): None,
         ("--register", str(tmp_path / "Neu")): None,
@@ -270,6 +273,21 @@ def test_launches_exec_one_interactive_session(tmp_path, monkeypatch, spawns):
     assert spawns["popen"][-1][:2] == ["konsole", "--workdir"] and "claude" in spawns["popen"][-1]
 
 
+def test_gaertner_sees_every_course_and_keeps_no_state(tmp_path, spawns):
+    """The Gärtner starts at the common root with every course's dossier, names
+    the focus, and neither registers a focus path nor counts anything."""
+    a, b, loose = _courses(tmp_path, "Physik", "Spanisch", "Alt")
+    m._register_workspace(a); m._register_workspace(b)
+    m._launch_gaertner(m._load_registry(), [b, loose], inline=True)
+    assert len(spawns["exec"]) == 1 and spawns["cwd"] == str(tmp_path)
+    opening = spawns["exec"][0][-1]
+    assert "-p" not in spawns["exec"][0] and a in opening and loose in opening
+    assert opening.index(b) < opening.index("<dossiers>")      # b is named as the focus
+    assert m.opening_message_gaertner([a, b], []).count(a) == 1  # no focus, no focus list
+    reg = m._load_registry()
+    assert loose not in reg["workspaces"] and "quickies" not in reg and "meta" not in reg
+
+
 # ---- prompts: orient, never re-encode the procedure ----------------------
 
 def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
@@ -285,6 +303,7 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
         "quickie": m._assemble_quickie_prompt([a, b]) + m.opening_message_quickie([a, b], 3, 7),
         "quickie-solo": m._assemble_quickie_prompt([a]) + m.opening_message_quickie([a], 0, 1),
         "meta": m._assemble_meta_prompt(a, [b]) + m.opening_message_meta(a, [b], 1, 2, 1),
+        "gaertner": m._assemble_gaertner_prompt() + m.opening_message_gaertner([a, b], [b]),
     }
     for name, text in texts.items():
         assert "CLAUDE.md" in text and "Heute:" in text, name
@@ -310,6 +329,8 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
     assert template_path not in texts["meta"]                # never the Meta's job either
     assert a in texts["meta"] and b in texts["meta"] and "2/30" in texts["meta"]
     assert "fehlermuster.md" in texts["meta"] and "nur im Ziel-Ordner" in texts["meta"]
+    assert a in texts["gaertner"] and "2/30" in texts["gaertner"]         # every dossier
+    assert "--unregister" in texts["gaertner"] and "registry.json" not in texts["gaertner"]
     monkeypatch.setenv("LERNCLAUDE_MEDIUM", "xournalpp")
     assert ".xopp" in m._assemble_prompt(a) and "get_canvas" not in m._assemble_prompt(a)
 

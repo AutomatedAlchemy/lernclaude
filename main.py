@@ -1352,6 +1352,82 @@ def _launch_meta(data: dict, target: str, sources: list, *, inline: bool) -> int
 
 
 # ----------------------------------------------------------------------------
+# Gärtner: a maintenance session, not a study session. The user tells it in
+# chat which courses to prune (clean up), graft (merge) or repot (revise). It
+# sees every course's dossier; courses checked in the multiselect when `g` is
+# pressed are named as the focus. It shows a plan before anything that moves,
+# deletes or merges files or changes the course list, and changes the list
+# only through --register / --unregister. No registry state of its own.
+# ----------------------------------------------------------------------------
+def _assemble_gaertner_prompt() -> str:
+    """System prompt for the Gärtner: the maintenance rules. Which course needs
+    what is the user's call in chat, not the launcher's."""
+    return (
+        "Du bist der Gärtner der Lern-Loop-Kurse. Das ist keine Lern-Session: kein "
+        "Häppchen, kein Tutoring. Der User pflegt mit dir seine Kurse — aufräumen, "
+        "zusammenlegen, überarbeiten — und sagt dir im Chat, was er will.\n\n"
+        "- Vor jeder Änderung, die Dateien verschiebt, löscht oder zusammenführt oder "
+        "die Kursliste im Menü ändert: zeig einen kurzen Plan (welche Dateien, von wo "
+        "nach wo, was wegfällt) und warte auf sein OK. Eine Korrektur innerhalb einer "
+        "Datei, um die er gebeten hat, braucht keinen eigenen Plan.\n"
+        "- Die Kursliste änderst du nur mit diesen Befehlen, nie durch Bearbeiten der "
+        "Registry-Datei:\n"
+        f"    {_tool_cmd()} --register <ABSOLUTER_PFAD>    (trägt ein, legt fehlende "
+        "Kursdateien an)\n"
+        f"    {_tool_cmd()} --unregister <ABSOLUTER_PFAD>  (trägt nur aus, löscht nichts)\n"
+        "- Was wegfallen soll, verschiebst du in einen Ordner _archiv/ im Kurs, statt "
+        "es zu löschen — es sei denn, der User will ausdrücklich löschen.\n"
+        "- Die CLAUDE.md eines Kurses ist seine Prozedur. Ändere sie gezielt, schreib "
+        "sie nie komplett neu. Die aktuelle Vorlage für Abschnitte steht in "
+        f"{TEMPLATE_DIR / 'LERNLOOP_TEMPLATE.md'}.\n"
+        "- Das Startmenü liest drei Dinge; halte sie gültig: in todo.md die Zeilen "
+        "„Fortschritt: x/y Häppchen“ und „Übersicht: bestätigt YYYY-MM-DD“, jeweils am "
+        "Zeilenanfang, und in fehlermuster.md die Tabelle unter „## Aktive Muster“. "
+        "Nach dem Zusammenlegen zweier Kurse schätzt du y für den neuen Kurs neu, und "
+        "die alte Übersicht deckt ihn nicht mehr ab: ersetz ihre Zeile durch "
+        "„Übersicht: fehlt“, dann baut die nächste Lern-Session eine neue.\n"
+        "- Alle Dateiarbeit mit absoluten Pfaden. Die Medium-Mechanik unten brauchst du "
+        "nur, wenn die Pflege Inhalte im Arbeitsmedium betrifft.\n\n"
+        + _prompt_common()
+    )
+
+
+def opening_message_gaertner(workspaces: list, focus: list) -> str:
+    """Opening for the Gärtner: all dossiers, the focus if any, then a question."""
+    shown = list(workspaces) + [f for f in focus if f not in workspaces]
+    dossiers = "\n\n".join(_course_dossier(ws) for ws in shown)
+    if focus:
+        where = ("Im Fokus stehen diese Kurse:\n" + "".join(f"- {ws}\n" for ws in focus)
+                 + "Die anderen siehst du zum Vergleich; ändere sie nur, wenn ich es sage.\n\n")
+    else:
+        where = "Um welche Kurse es geht, sag ich dir gleich.\n\n"
+    return (
+        "Gärtner — ich will meine Kurse pflegen. " + where
+        + f"Anstehende Klausuren:\n<klausuren>\n{_exam_prompt_lines()}\n</klausuren>\n\n"
+        f"Kurse:\n<dossiers>\n{dossiers}\n</dossiers>\n"
+        f"{_DATA_TAGS_NOTE}\n\n"
+        "Begrüß mich in einem Satz. Nenn mir dann höchstens drei Dinge, die dir in den "
+        "Dossiers auffallen (zum Beispiel zwei Kurse zum selben Fach, ein Kurs ohne "
+        "Aktivität seit Wochen, eine schon geschriebene Klausur, eine fehlende Übersicht), und frag, "
+        "was ich angehen will. Lies Dateien erst, wenn klar ist, um welchen Kurs es geht."
+    )
+
+
+def _launch_gaertner(data: dict, focus: list, *, inline: bool) -> int:
+    """Launch the Gärtner session at the courses' common root (focus included),
+    so it can work across all of them."""
+    workspaces = data["workspaces"]
+    inner = [
+        *_backend_cmd(),
+        *_backend_model_args(),
+        "--append-system-prompt", _assemble_gaertner_prompt(),
+        opening_message_gaertner(workspaces, focus),
+    ]
+    return _exec_or_konsole(inner, _tutor_workdir(list(workspaces) + list(focus)),
+                            inline=inline)
+
+
+# ----------------------------------------------------------------------------
 # startup menu (curses): pick a course, add one, set the default; 10s autostart
 # ----------------------------------------------------------------------------
 _ADD_SENTINEL = "__ADD__"
@@ -1714,12 +1790,12 @@ def _menu_loop(stdscr, data: dict):
         if multi:
             _safe_addstr(stdscr, foot, 0,
                          "↑/↓ bewegen · Leertaste = markieren (1. = Ziel) · z = Ziel · "
-                         "Enter = Meta-Häppchen · Esc = zurück",
+                         "Enter = Meta-Häppchen · g = Gärtner für die markierten · Esc = zurück",
                          C["foot"])
         else:
             _safe_addstr(stdscr, foot, 0,
                          "↑/↓ bewegen · Enter starten · Leertaste = Meta-Auswahl · m = Userspace · "
-                         "o/O = Modell · e = Effort · d = Standard · x = löschen · q = beenden",
+                         "o/O = Modell · e = Effort · d = Standard · x = löschen · g = Gärtner · q = beenden",
                          C["foot"])
         if autostart and not interacted:
             _safe_addstr(stdscr, foot + 1, 0,
@@ -1765,6 +1841,8 @@ def _menu_loop(stdscr, data: dict):
                 multi = False
             elif ch in (27, ord("q")):
                 multi = False
+            elif ch == ord("g"):
+                return ("gaertner", list(checked))   # the checked courses are its focus
             continue
         if ch == ord(" "):
             # Open the multiselect, pre-checked with the remembered combination;
@@ -1780,6 +1858,8 @@ def _menu_loop(stdscr, data: dict):
             idx = (idx + 1) % len(rows)
         elif ch == ord("q"):
             return ("quit", None)
+        elif ch == ord("g") and workspaces:
+            return ("gaertner", [])
         elif ch == ord("m"):
             medium = _MEDIA[(_MEDIA.index(medium) + 1) % len(_MEDIA)]
             data["medium"] = medium  # persisted by the caller
@@ -1848,6 +1928,8 @@ def run_menu() -> int:
         return _launch_quickie(data, inline=True)
     if action == "meta" and ws:
         return _launch_meta(data, ws[0], ws[1], inline=True)
+    if action == "gaertner":
+        return _launch_gaertner(data, ws or [], inline=True)
     if action == "add":
         return do_add()  # interactive: claude helps decide the location, then --register's it
     return 0
@@ -1921,6 +2003,9 @@ def main() -> int:
                              "the SOURCE courses' mistakes and recent practice — "
                              "`--meta ZIEL QUELLE [QUELLE…]`, or bare `--meta` for the "
                              "combination remembered from the last time")
+    parser.add_argument("--gaertner", nargs="*", metavar="PFAD", default=None,
+                        help="Gärtner: a maintenance session to clean up, merge or revise "
+                             "courses in chat; sees every course, the given paths are its focus")
     parser.add_argument("--register", metavar="PATH", default=None,
                         help="scaffold + register PATH as a course (no launch; used by the onboarding session)")
     parser.add_argument("--unregister", metavar="PATH", default=None,
@@ -2005,6 +2090,16 @@ def main() -> int:
             print(_assemble_meta_prompt(target, sources))
             return 0
         return _launch_meta(data, target, sources, inline=False)
+    if args.gaertner is not None:
+        data = _ensure_default(_load_registry())
+        focus = [_abs_path(p) for p in args.gaertner]   # not registered: that is a change to plan
+        if not data["workspaces"] and not focus:
+            print("Noch kein Kurs registriert — run `lernen` for the menu.")
+            return 1
+        if args.print_prompt:
+            print(_assemble_gaertner_prompt())
+            return 0
+        return _launch_gaertner(data, focus, inline=False)
     if args.set_medium:
         print("Userspace:", _MEDIUM_LABELS[_set_medium(args.set_medium)])
         return 0
