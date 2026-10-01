@@ -32,6 +32,23 @@ Onboarding stamps a minimal skeleton and never overwrites an existing file:
 
 Everything else is created on demand, when a workflow is first used.
 
+## The Blatt-Finder
+
+When an exam allows a self-written sheet and there is a pool of questions (a
+question catalogue, the lecture goals, old exam tasks), the session builds
+`Klausur_mitnehmen/blatt_finder.html` once the sheet has a first complete
+version: the questions on the left, the sheet on the right. Clicking a question
+highlights exactly the text on the sheet that helps answer it and says whether
+the sheet covers the question fully, partly or not at all. Clicking a passage
+of the sheet lists the questions that use it. The page is one self-contained
+file and works offline.
+
+The mapping is done by subagents and checked mechanically: every snippet must
+occur verbatim on the sheet. [`templates/tools/blatt_finder.py`](../templates/tools/blatt_finder.py)
+validates and builds; its `--help` is the full procedure and data format. It
+needs `node` with KaTeX only to render formulas (`--katex DIR`), and falls back
+to the formula source without it.
+
 ## Adding a course
 
 `--add` is interactive by design. Rather than prompting you to type an absolute

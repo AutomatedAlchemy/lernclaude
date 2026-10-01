@@ -341,6 +341,12 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
     assert template_path not in m.opening_message(a)         # confirmed: no nudge
     assert "Übersicht: bestätigt 2026-09-02" in m.opening_message_tutor([a, b])
     assert "Kursübersicht" in m.opening_message_onboard()
+    # the Blatt-Finder: the launcher names the tool, the step itself is the
+    # course CLAUDE.md's and the tool's --help
+    finder = m.TEMPLATE_DIR / "tools" / "blatt_finder.py"
+    assert finder.is_file() and "blatt_finder.py" in TEMPLATE
+    assert str(finder) in texts["course"] and str(finder) in texts["tutor"]
+    assert str(finder) not in texts["quickie"] and str(finder) not in texts["meta"]
     assert a in texts["course"]
     assert a in texts["tutor"] and b in texts["tutor"] and "2/30" in texts["tutor"]   # dossiers
     assert a in texts["quickie"] and b in texts["quickie"]
@@ -352,6 +358,40 @@ def test_prompts_orient_without_reencoding_the_procedure(tmp_path, monkeypatch):
     assert "--unregister" in texts["gaertner"] and "registry.json" not in texts["gaertner"]
     monkeypatch.setenv("LERNCLAUDE_MEDIUM", "xournalpp")
     assert ".xopp" in m._assemble_prompt(a) and "get_canvas" not in m._assemble_prompt(a)
+
+
+def test_blatt_finder_marks_exactly_the_mapped_spans(tmp_path):
+    """The finder's promise: a question highlights the mapped text and nothing
+    else, a snippet that cuts a formula or left the sheet is refused, and the
+    page builds without KaTeX."""
+    spec = importlib.util.spec_from_file_location(
+        "lernclaude_blatt_finder", HERE / "templates" / "tools" / "blatt_finder.py")
+    bf = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bf)
+    sheet = tmp_path / "blatt.md"
+    sheet.write_text("**Leitung**\n- Ohm $U = RI$; Leistung $P = UI$ ==nicht $I^2$ vergessen==\n"
+                     "- Drude: freies Elektronengas\n", encoding="utf-8")
+    lines = sheet.read_text(encoding="utf-8").split("\n")
+    data = [
+        {"nr": 1, "frage": "Ohmsches Gesetz?", "abdeckung": "voll", "hinweis": "U = RI ablesen.",
+         "treffer": [{"zeile": 2, "text": "Ohm $U = RI$"}]},
+        {"nr": 2, "frage": "Postulate?", "abdeckung": "keine", "hinweis": "Steht nicht drauf.", "treffer": []},
+    ]
+    assert bf.check(lines, data) == []
+    cut = [dict(data[0], treffer=[{"zeile": 2, "text": "Ohm $U = R"}])]
+    gone = [dict(data[0], treffer=[{"zeile": 3, "text": "Ohm $U = RI$"}])]
+    assert "zerschneidet" in bf.check(lines, cut)[0]
+    assert "enthält nicht" in bf.check(lines, gone)[0]          # strict: the named line
+    out = tmp_path / "finder.html"
+    stats = bf.build(str(sheet), gone + data[1:], str(out), "Test", katex_dir=False)
+    assert stats["voll"] == 1 and stats["keine"] == 1           # build follows a moved line
+    page = out.read_text(encoding="utf-8")
+    q = json.loads(page.split("const Q = ", 1)[1].split(";\n", 1)[0])
+    assert len(q[0]["segs"]) == 1 and q[1]["segs"] == []
+    marked = page.split(f'data-s="{q[0]["segs"][0]}">', 1)[1].split("</span>", 1)[0]
+    assert marked.startswith("Ohm ") and "Leistung" not in marked
+    with pytest.raises(SystemExit):                              # snippet left the sheet
+        bf.build(str(sheet), [dict(data[0], treffer=[{"zeile": 2, "text": "Hall"}])], str(out), katex_dir=False)
 
 
 def test_catchall_rule_only_with_a_marked_registered_course(tmp_path):

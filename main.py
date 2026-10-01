@@ -431,11 +431,28 @@ def _overview_brief() -> str:
     )
 
 
+def _finder_brief() -> str:
+    """The Blatt-Finder is a preparation step with a tool behind it. A stamped
+    course CLAUDE.md cannot know where this repo lives, so the launcher names
+    the tool's path and nothing else: when the step is due is the course
+    CLAUDE.md's §Situative Dateien, how it is built is the tool's own --help —
+    which is also what an older course without that entry falls back on."""
+    return (
+        "Erlaubt die Klausur ein eigenes Blatt und gibt es einen Fragenpool "
+        "(Fragenkatalog, Lernziele, Altklausuren), gehört der Blatt-Finder zur "
+        "Vorbereitung: wann, steht in §'Situative Dateien' der Kurs-CLAUDE.md; "
+        f"gebaut wird er mit {TEMPLATE_DIR / 'tools' / 'blatt_finder.py'} "
+        "(Vorgehen und Datenformat: --help). Fehlt der Eintrag in der "
+        "Kurs-CLAUDE.md (älterer Kurs), gilt das Vorgehen aus --help: bauen, "
+        "sobald das Blatt eine erste vollständige Fassung hat."
+    )
+
+
 def opening_message(workspace: str) -> str:
     text = (
         "Lass uns lernen. Führe die Lern-Loop aus der CLAUDE.md dieses Ordners aus: "
         "öffne das Lern-Set (wie dort beschrieben) und gib mir dann direkt das "
-        "nächste Häppchen. " + _LOOP_BRIEF
+        "nächste Häppchen. " + _LOOP_BRIEF + " " + _finder_brief()
     )
     if course_overview(workspace) is None:
         text += " " + _overview_brief()
@@ -1134,7 +1151,8 @@ def opening_message_tutor(workspaces: list) -> str:
         "Rückfrage direkt los: lies die CLAUDE.md des gewählten Kurs-Ordners, "
         "führe dessen Lern-Loop aus (Lern-Set öffnen, wie dort beschrieben) und "
         "gib mir das nächste Häppchen. Alle Dateiarbeit mit absoluten Pfaden im "
-        "gewählten Kurs-Ordner. " + _LOOP_BRIEF + " " + _overview_brief()
+        "gewählten Kurs-Ordner. " + _LOOP_BRIEF + " " + _finder_brief() + " "
+        + _overview_brief()
     )
 
 

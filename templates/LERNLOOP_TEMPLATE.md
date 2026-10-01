@@ -132,6 +132,19 @@ geändert, verschoben oder gelöscht.
 - **`Klausur_mitnehmen/`** (nur falls Hilfsmittel erlaubt, dann ab dem Tag, an dem
   das feststeht) — Mitnehm-Blätter; Patch-SSoT `cheatsheet_personalisierung.md`
   (Fehlermuster → Blatt-Änderungen), nach jedem Review geprüft.
+- **`Klausur_mitnehmen/blatt_finder.html`** (nur falls ein eigenes Blatt erlaubt ist
+  und es einen Fragenpool gibt: Fragenkatalog, Lernziele der Folien,
+  Altklausur-Aufgaben) — der Blatt-Finder: eine Seite mit dem Mitnehm-Blatt und allen
+  Fragen des Pools. Ein Klick auf eine Frage markiert auf dem Blatt genau die Stellen,
+  die bei der Antwort helfen, und sagt, ob das Blatt die Frage voll, teilweise oder gar
+  nicht abdeckt. Standardschritt der Vorbereitung: bauen, sobald das Blatt eine erste
+  vollständige Fassung hat, ohne nachzufragen und neben dem Lernen (die Zuordnung
+  machen Subagenten). Danach dem User die Seite im Browser öffnen und die Zahlen
+  nennen. Die Fragen mit „teilweise“ und „keine“ zeigen, was aufs Blatt fehlt oder
+  auswendig sitzen muss; ergänzt wird das Blatt nur nach dem Ja des Users. Nach jeder
+  Änderung am Blatt neu bauen. Werkzeug, Vorgehen und Datenformat: `blatt_finder.py
+  --help`, der Pfad steht in der Startnachricht der Session. Fragen und Zuordnung
+  liegen als `blatt_finder_map.json` daneben.
 
 ## Lern-Loop (der Kern)
 

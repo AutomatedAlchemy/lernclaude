@@ -75,6 +75,13 @@ lernclaude ships no MCP client and no credentials — those come from your own
 Claude Code MCP config. Status 2026-09-16: multi-user yes, several agents in
 parallel on one account not safe yet, one agent per account link.
 
+## The Blatt-Finder
+
+For exams that allow a self-written sheet, the session builds a page that shows
+the sheet next to every question of the catalogue and highlights the text that
+answers the selected question. See
+[`docs/workspace.md`](docs/workspace.md#the-blatt-finder).
+
 ## The exam banner
 
 Set `LERNCLAUDE_EXAMS` (or the registry key `"exams_file"`) to a markdown file of

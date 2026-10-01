@@ -277,6 +277,30 @@ only that routing sentence. How the catch-all works through its inbox is its
 own CLAUDE.md's business, like any other procedure. Added 2026-09-24 so the
 rule lives in one place instead of a copied paragraph in every course.
 
+## Blatt-Finder: a tool in `templates/tools/`, three places that name it
+
+`templates/tools/blatt_finder.py` builds a page that shows a course's take-in
+sheet beside its question pool and highlights, per question, the sheet text that
+helps answer it (first built 2026-10-01 for Funktionsmaterialien, made the
+standard preparation step the same day). The split follows the Kursübersicht:
+
+- **When** is the template's §Situative Dateien entry (own sheet allowed, a
+  question pool exists, sheet has a first complete version; rebuild after
+  every sheet change).
+- **How** is the tool's own docstring, printed by `--help`: sheet format,
+  `fragen.json`, the per-subagent mapping files, `check`, `build`. Keep the
+  procedure there and nowhere else — the template and the launcher only point.
+- **Where** is `_finder_brief`, appended to `opening_message` and
+  `opening_message_tutor`. A stamped course CLAUDE.md cannot know this repo's
+  path, so the launcher names it. The same sentence is the backfill for older
+  courses whose CLAUDE.md lacks the entry. Never the Quickie's or the Meta's.
+
+The tool is stdlib Python. KaTeX (via `node`) is optional and only renders the
+formulas; without it the page keeps the formula source. `check` is strict about
+the line number (subagents must cite the right line), `build` searches the whole
+sheet when a line moved and aborts when a snippet is gone.
+`test_blatt_finder_marks_exactly_the_mapped_spans` pins both.
+
 ## Autostart belongs to the installer, not to this file
 
 Login autostart is cli-tools-kit's, and the whole implementation here is one
@@ -397,6 +421,7 @@ that value falls back to `DEFAULT_MODEL` instead of reaching a launch.
 | `tier.py` | vendored subscription-tier → model/effort mapping; **vendored, unused** — no longer imported |
 | `templates/LERNLOOP_TEMPLATE.md` | the Lern-Loop procedure stamped into new workspaces |
 | `templates/media/*.md` | per-medium mechanics, appended to the system prompt |
+| `templates/tools/blatt_finder.py` | Blatt-Finder: validates a question→sheet mapping and builds the page; `--help` is the procedure |
 | `test_lernclaude.py` | offline tests — behaviour only, no network, no launch |
 | `requirements.txt` | empty by design; stdlib only |
 
